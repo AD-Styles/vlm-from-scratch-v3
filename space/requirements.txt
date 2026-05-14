@@ -1,10 +1,13 @@
 # 로컬 학습 환경과 정확히 동일한 버전 - adapter_config.json 호환성 필수
 # (특히 peft 0.19.1: alora_invocation_tokens 등 신규 필드 인식)
+# v3 추가: safetensors 명시 (slim adapter 의 image_token_row.safetensors 로드)
+# transformers 가 CLIPModel/CLIPProcessor (OOD detector) 도 함께 제공
 torch==2.6.0
 torchvision==0.21.0
 transformers==5.8.0
 peft==0.19.1
 huggingface_hub==1.14.0
+safetensors>=0.4.0
 pillow==12.1.1
 gradio==6.14.0
 einops

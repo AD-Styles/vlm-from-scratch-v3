@@ -1,258 +1,370 @@
-# Mini-LLaVA from Scratch
+# Mini-LLaVA v3 (Korean Multilingual + Slim Adapter + OOD Detection)
 
-> CLIP-ViT 와 Qwen2.5 를 직접 조립해 만든 멀티모달 LLM. **결과의 완벽함보다 "한계 분석 → 다음 단계 도출" 의 반복 사이클** 을 기록한 포트폴리오입니다.
+> [v2 vlm-from-scratch](https://github.com/AD-Styles/vlm-from-scratch) 의 미해결 과제 3가지를 정조준한 진화 버전. 모든 개선은 **데이터로 검증**, 모든 학습은 **사전 가설 검증 후만** 실행.
 
-| | |
-|---|---|
-| **Backbone** | CLIP-ViT-B/32 + Qwen2.5-0.5B-Instruct |
-| **학습 환경** | RTX 4060 Laptop · 8GB VRAM (단일 노트북) |
-| **학습 가능 파라미터** | v1: 1.49M · v2: 3.66M (전체의 0.6%) |
-| **학습 시간** | v1: 6분 43초 · v2: 47분 |
-| **결과 요약** | 영문 VQA **4/5** ✅ · 한국어 ⚠️ catastrophic forgetting · OOD ⚠️ 환각 ([상세](#-결과-results)) |
-| **레퍼런스** | LLaVA-1.5 (Liu et al., 2023) — 동일한 2-Stage 레시피의 mini 버전 (9K 샘플) |
-| **사전 학습 가중치** | 🤗 [AD-Styles/mini-llava-stage2](https://huggingface.co/AD-Styles/mini-llava-stage2) (HuggingFace Hub) |
-| **🚀 Live Demo** | [Hugging Face Spaces](https://huggingface.co/spaces/AD-Styles/mini-llava-demo) — 브라우저에서 즉시 체험 (설치 0) |
+| | v2 baseline | **v3 (이 레포)** |
+|---|---|---|
+| **Backbone** | CLIP-ViT-B/32 + Qwen2.5-0.5B-Instruct | (동일 — Vision encoder up 시도는 ablation 결과 미채택) |
+| **다국어** | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** |
+| **LoRA adapter** | 1045 MB | **8.28 MB (−99.21%)** |
+| **OOD 처리** | 무조건 답변 (hallucination) | **"모름" 가능** (CLIP+entropy 신호 결합) |
+| **모델 자산 총합** | projector 6 MB + adapter 1045 MB ≈ 1051 MB | **projector 5.7 MB + adapter 8.28 MB ≈ 14 MB** |
+| **학습 시간 합계** | 47분 | Step 1 (Korean): 175분 · Step 4 (slim): **0분** (사전 분석으로 해결) |
+| **사전 학습 가중치** | [AD-Styles/mini-llava-stage2](https://huggingface.co/AD-Styles/mini-llava-stage2) | 🤗 [AD-Styles/mini-llava-v3](https://huggingface.co/AD-Styles/mini-llava-v3) |
+| **🚀 Live Demo** | [v2 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-demo) | [v3 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo) |
 
+> 핵심 통찰: **"모든 문제가 학습으로 풀리는 건 아니다"** — Step 4 의 1GB 문제는 30분 분석으로 99.21% 해결 (3시간 retraining 절약).
 
 ---
 
 ## 🧠 아키텍처 (Architecture)
 
-LLaVA-1.5의 핵심 통찰: **거대 모델 두 개를 학습시키는 것이 아니라, 두 모달리티 간의 "통역사"(projector) + 작은 LoRA 만 학습.**
-
-> CLIP의 patch grid: 입력 224×224 / patch 32px = 7 → **7×7 = 49 patch**.
+기본 모델 구조는 v2 와 동일 (LLaVA-1.5 mini). v3 는 **두 가지 추가 layer** 만 도입.
 
 ```
-   Image (224×224)              Text + <image> placeholder
+   Image (224×224)               Text + <image> placeholder
         │                                  │
         ▼                                  ▼
    CLIP-ViT-B/32 (frozen)            Tokenizer + Embeds
-        │ [49, 768]                        │ [L=text_len, 896]
+        │ [49, 768]                        │
         ▼                                  │
-   ★ MLP Projector (학습)                  │
+   ★ MLP Projector                        │
         │ [49, 896]                        │
         └────────┬─────────────────────────┘
                  ▼
-   <image> 1개 → patch 49개로 splice  ←★ 직접 구현한 핵심 로직
+   <image> → patch 49개로 splice  ←★ src/model.py 직접 구현
                  │
                  ▼
    Qwen2.5-0.5B (frozen + ★ LoRA on q/k/v/o)
                  │
-                 ▼
+                 ▼ (★★ v3 추가: OOD wrapper 선택)
        "Dog. The dog is wearing a hat."
 ```
 
-★ 표시가 직접 구현 (`src/model.py`). HuggingFace `LlavaForConditionalGeneration` 같은 고수준 추상화 미사용.
+### v3 만의 추가 (모두 `src/` 에 구현)
 
-> **Stage 1 (v1)** = projector 만 학습 · **Stage 2 (v2)** = projector + LoRA 동시 학습 ([회고록 §Step 2 참조](#-회고록-retrospective))
+```
+1. Slim Adapter Loading (src/model.py: load_lora_adapter)
+   ├─ adapter_model.safetensors (8 MB) — LoRA 키만
+   ├─ image_token_row.safetensors (7 KB) — <image> 토큰의 학습된 row
+   └─ load 시 base Qwen2.5 의 마지막 row 만 patch
+   → PEFT 표준 1 GB → 8.28 MB
 
----
+2. OOD Detector (src/ood_detection.py: OODDetector)
+   ├─ CLIP-ViT-B/32 (text encoder 포함, 별도 로드)
+   ├─ 57 in-dist 카테고리 사전 임베딩
+   ├─ score(image, first_logits) → ood_score 0~1
+   └─ threshold (default 0.5) 기반 binary 판정
+```
 
-## 📊 결과 (Results)
-
-### v1 — Stage 1 Baseline (Projector Alignment)
-
-**학습 설정:** Flickr30k 5K caption · projector 만 학습 · 1 epoch · lr 1e-3 · 6분 43초 · **최종 loss 2.4403**
-
-**대표 응답 (강아지 사진):**
-
-> Q: "What is in this image?" → A: "A black and white dog in a red frisbee stands on the beach."
-
-**진단:** "dog" 키워드만 정확. 나머지(frisbee, beach, black) 모두 환각. 모델이 **Flickr30k 캡션 패턴(`A [person] in [clothes] is [verb]`)을 모방할 뿐, 질문에 응답하는 능력 부재.** LLaVA-1.5 논문 ([Liu et al., 2023, §4.1](https://arxiv.org/abs/2310.03744)) 의 "Stage 1 alignment limitations" 와 일치.
-
-> 💭 왜 캡션 패턴만 모방하나? Stage 1 은 image embedding 을 LLM 공간에 "정렬" 만 하고 instruction-following 학습은 안 하기 때문. → Stage 2 가 필요한 이유 ([회고록 §Step 2 참조](#-회고록-retrospective))
+> Stage 1 (projector alignment) + Stage 2 (LoRA + projector) 의 2-Stage 학습 패러다임은 v2 그대로.
 
 ---
 
-### v2 — Stage 2 Instruction Tuning + LoRA
+## 🎯 v3 의 3가지 검증된 개선
 
-9,000 instruction 샘플(`localized_narratives` + `aokvqa` + `vqav2` 균형 믹스) 로 projector + LoRA 동시 학습.
+### 1️⃣ 한국어 Catastrophic Forgetting 해소
 
-#### Test A — 영문 VQA (강아지 사진, v1과 동일 입력)
+#### 데이터 구성
 
-<p align="center">
-  <img src="assets/source_dog.jpg" width="220" alt="강아지 입력 이미지"><br>
-  <em>입력 이미지 (Test A · B 공통)</em>
-</p>
+| Source | Sample 수 | 언어 |
+|---|---|---|
+| vqav2 (영문 VQA) | 3K | 영문 |
+| LocalizedNarratives | 3K | 영문 |
+| A-OKVQA | 3K | 영문 |
+| **KoLLaVA (DeepL 번역 of LLaVA-Instruct)** | **4K** | **한국어** |
+| **합계** | **13K (mix)** | **Korean ratio 30.8%** |
 
-> 측정 환경: RTX 4060 Laptop GPU · `do_sample=True, T=0.7, top_p=0.9`
+`scripts/download_korean_data.py` — KoLLaVA dataset 다운로드 + COCO 2014 image cross-fetch
+`scripts/mix_manifests.py` — 영문/한국어 manifest 병합
 
-| 질문 | v2 응답 | 시간 |
-|------|---------|------|
-| What is in this image? | **Dog.** | 2.43s |
-| What color is the dog? | **White.** ✅ | 0.47s |
-| Is the dog wearing anything on its head? | **Yes.** ✅ | 0.46s |
-| What is on the dog's head? | **Hat.** ✅ | 0.51s |
-| Describe this image in one sentence. | "In this image I can see a cat on the floor." ⚠️ | 1.58s |
+#### 학습
 
-**🎯 핵심 발견 — Instruction Tuning 의 결정적 증거:**
+```bash
+python -m src.train \
+  --data-path data/v3_step1_korean/manifest.json \
+  --output-dir checkpoints/v3_step1_korean \
+  --init-projector checkpoints/v1_baseline/projector.pt \
+  --use-lora --lora-r 16 --lora-alpha 32 \
+  --batch-size 2 --grad-accum-steps 4 --epochs 2 --lr 2e-4
+```
 
-v2는 **질문 형식에 따라 응답 포맷을 자동으로 바꿉니다** (단어 / 색상 / Yes-No / 객체 / 문장). 동일 입력의 v1 Q1 응답 — *"A black and white dog in a red frisbee stands on the beach."* — 같은 Flickr30k 캡션 패턴 모방과 명백한 대비. 시각적 정확도 **v1 0/1 (Q1 만 측정) → v2 4/5 (80%)**.
+- 학습 시간: **175분** (3,249 optimizer step)
+- Final loss: 1.16 (v2 의 instruct-only baseline 과 비슷한 수준)
 
-> 💭 v2 가 잘하는 이유: 학습 시 **assistant 응답 토큰만 loss** (instruction-only label masking) → 모델이 "질문에 답하는" 패턴 학습. v1 은 전체 caption 의 next-token loss → "Flickr30k 캡션 모방" 만 학습.
+#### 결과 (greedy decoding — deterministic)
 
-> Test A 의 마지막 행 (Q5 "Describe...") 에서의 "cat" 혼동: 헬로키티(고양이 캐릭터) 모자 패턴이 main object 인식에 영향. CLIP-ViT-B/32 의 49 patch (7×7) 해상도로는 강아지 얼굴 + 모자 위 고양이 얼굴이 모호해짐. **→ v3 의 CLIP-ViT-L/14 (576 patch) 업그레이드 motivation 의 직접적 증거** ([회고록 §Step 6 참조](#-회고록-retrospective)).
+| Q | A |
+|---|---|
+| `Describe this image briefly.` | "In this image we can see a dog and the background is white." |
+| `What animal is in this image?` | "**Dog.**" |
+| `이 이미지에 무엇이 보이나요?` | "이미지에는 흰색 소파에 앉아 있는 소가..." |
+| `이 이미지의 색상은 무엇인가요?` | "이미지의 색상은 흰색으로 보입니다..." |
 
----
-
-#### Test B — 한국어 (Catastrophic Forgetting 시연)
-
-> 측정 환경 · 입력 이미지: Test A 와 동일 (강아지 사진).
-
-| 질문 | v2 응답 | 평가 |
-|------|---------|------|
-| 이 이미지에 무엇이 보이나요? | "화이트의 소파, 물건." | ❌ 강아지를 "흰 소파"로 |
-| 이 강아지는 무슨 색이에요? | "보통." | ❌ 의미 없음 |
-| 이 강아지는 머리에 무엇을 쓰고 있나요? | **"개."** | 🔍 **분석의 결정적 증거** |
-| 이 이미지를 한 문장으로 설명해 주세요. | "In this picture I can see a cat..." | ⚠️ 영어로 fallback |
-
-**🔍 핵심 발견 — LoRA의 Catastrophic Forgetting 정량 입증:**
-
-B3 응답 **"개."** 가 모델 내부를 그대로 보여줍니다:
-- ✅ 시각 인식 작동 (dog)
-- ✅ 한국어 키워드 인식 ("강아지")
-- ❌ 영어 단답 편향이 한국어 표현으로 변환되며 **정답("모자")이 아닌 객체 카테고리("개")** 출력
-
-> B1 ("화이트의 소파") / B2 ("보통") 도 같은 패턴: 시각 정보는 부분 인식하나 한국어 표현 매핑 깨짐. B4 는 모델이 한국어를 포기하고 영어로 fallback — catastrophic forgetting 의 역방향 시연.
-
-원인: 학습 데이터 100% 영어 → LoRA가 영어 시각-언어 매핑만 강화 → base Qwen2.5의 한국어 능력이 부분 손상. **PEFT 사용 시 다국어 균형 데이터의 중요성**을 보여주는 정직한 결과. **→ v3 의 한국어 instruction 데이터 30%+ 추가 motivation** ([회고록 §Step 6 참조](#-회고록-retrospective)).
+→ **한국어 응답 정상 생성** (v2 에선 영문/혼합으로만 응답)
+→ 이미지 내용 정확도는 여전히 0.5B LLM 한계 (개를 소로 오인 등) — [한계 §](#️-한계-limitations) 참조
 
 ---
 
-#### Test C — 피카츄 (OOD: 만화 캐릭터)
+### 2️⃣ Slim Adapter — 1045 MB → 8.28 MB (재학습 0)
 
-<p align="center">
-  <img src="assets/source_pikachu.png" width="280" alt="피카츄 입력 이미지"><br>
-  <em>입력 이미지 (OOD: 학습 분포 외부의 만화 캐릭터)</em>
-</p>
+#### 문제 정의
 
-> 측정 환경: Test A 와 동일 (RTX 4060 GPU · sampling).
+v2 의 LoRA adapter 가 1 GB. HF Hub 배포 시 무겁고, 다운로드 친화적이지 않음.
 
-| 질문 | v2 응답 | 정답 | 모델 내부 추론 (추정) |
-|------|---------|------|---------------------|
-| What is in this image? | "Giraffe." | Pikachu | 노랑+검정 패턴 → 학습 분포 중 가장 가까운 동물 |
-| What color is the main character? | "White." | Yellow | Main subject 인식 실패 → 가장 두드러진 영역(흰 모자) |
-| What is the character wearing on its head? | "Tie." | Hat | 공간 localization 실패 + 몸의 검은 띠를 넥타이로 |
-| Describe this image in one sentence. | "In this image we can see a human figure..." | 만화 캐릭터 | 이족보행 + 팔 들기 자세 → 인간 형상으로 추상화 |
+v2 에서 단순 추출 시도 → 품질 손상 (Dog→Cat, White→Brown 등). [v2 README §Step 5](https://github.com/AD-Styles/vlm-from-scratch#-회고--개선의-여정) 참조.
 
-**🔍 핵심 발견 — "랜덤 환각이 아닌 체계적 오류":**
+#### 가설 검증 — 사전 분석으로 진짜 원인 규명
 
-응답이 모두 틀렸지만, **각 응답에서 모델이 무엇을 보고 있는지** 가 드러납니다. v1 의 무관한 환각("man on motorcycle")과 달리, v2는 시각 특징(색상/패턴/자세)을 부분 인식하고 학습 분포 내 가장 가까운 클래스로 매핑합니다.
+**초기 가설** (3시간 retraining 비용): "tied_embeddings 가 원인 → `tie_word_embeddings=False` 로 재학습"
 
-> 💭 왜 "체계적 오류"가 진보인가? v1 환각은 random — 디버깅 불가. v2 환각은 시각 특징 → 가까운 클래스 매핑 — 패턴 발견 가능 → **OOD detection module 설계 근거 제공**.
+**Phase 0.1.5 사전 분석 (5분):**
 
-이는 VLM 분야의 **두 가지 본질적 문제**를 보여줍니다:
-1. **CLIP-ViT-B/32 의 OOD 표현력 한계** — 만화/애니메이션 학습 데이터 부재
-2. **VLM Hallucination Problem** — 모델이 "모른다"고 답하지 않고 "가장 가까운 답"을 만들어냄 (GPT-4V 까지 포함한 모든 VLM의 공통 문제)
+```python
+# saved adapter 의 embed_tokens vs base Qwen2.5 직접 비교
+첫 151665 행: max diff = 0.000000e+00  (정확히 일치)
+첫 151665 행: changed rows = 0 / 151665
+마지막 1 행 (<image> 토큰): 학습된 representation (norm > 0)
+```
 
-**→ v3 의 두 가지 motivation 직결:** (1) **CLIP-ViT-L/14 (576 patch)** + OOD 데이터 augmentation, (2) **OOD detection module** ([회고록 §Step 6 참조](#-회고록-retrospective)).
+→ **결론: embed_tokens 의 99.9994% (151665/151666) 는 base Qwen2.5 그대로**.
+   학습된 부분은 마지막 `<image>` 토큰 1 행 뿐.
+
+→ **v2 가 실패한 진짜 원인: 마지막 1 행 (학습된 `<image>` representation) 까지 통째로 drop 했기 때문**.
+
+#### 해결 (`scripts/extract_lora_v3.py`)
+
+```
+slim adapter:
+  adapter_model.safetensors      8.27 MB   ← LoRA 키 192개
+  image_token_row.safetensors    7.17 KB   ← embed_tokens + lm_head 의 마지막 1 행
+  adapter_config.json            1 KB      ← modules_to_save = None
+  ─────────────────────────────────────────
+  total                          8.28 MB   (원본 1045 MB 대비 −99.21%)
+```
+
+추론 시 `src/model.py: load_lora_adapter()` 가 `image_token_row.safetensors` 자동 감지 + base Qwen2.5 의 마지막 row 만 patch (8 MB LoRA 와 함께 로드).
+
+#### 검증 — greedy decoding 7/7 비트 단위 일치
+
+`scripts/verify_slim_adapter.py` 으로 deterministic 비교:
+
+| Prompt | FULL (1045MB) 응답 | SLIM (8.28MB) 응답 | 일치 |
+|---|---|---|---|
+| Describe this image briefly. | "In this image we can see a dog..." | (정확히 동일) | ✅ |
+| What animal is in this image? | "Dog." | (정확히 동일) | ✅ |
+| 이 이미지에 무엇이 보이나요? | "이미지에는 흰색 소파에 앉아..." | (정확히 동일) | ✅ |
+| 이 이미지의 색상은 무엇인가요? | "이미지의 색상은 흰색으로..." | (정확히 동일) | ✅ |
+| What is in this image? (Pikachu) | "A picture of a person wearing a helmet." | (정확히 동일) | ✅ |
+| Describe this character. | "...wearing a black dress..." | (정확히 동일) | ✅ |
+| 이 캐릭터의 색은? | "이 캐릭터의 색은 빨간색입니다..." | (정확히 동일) | ✅ |
+| **합계** | | | **7/7 (100%)** |
+
+→ **무손실 입증**, 1045 MB → 8.28 MB 안전 deploy.
 
 ---
 
-## 💡 회고록 (Retrospective)
+### 3️⃣ OOD Detection (Out-Of-Distribution Awareness)
 
-> 이 프로젝트는 **단발성 결과물이 아니라 6단계 의사결정 사이클** 의 기록입니다. 각 단계에서 어떤 한계를 발견하고, 어떤 옵션을 검토했고, 왜 그 선택을 했는지 정리합니다.
+#### 동기
 
-### Step 1 — 첫 시도: Stage 1 Alignment (v1)
-**가설:** LLaVA-1.5 §3 의 핵심대로, projector 만 학습해도 시각-언어 정렬이 가능할 것이다.
+v2 는 학습 분포 밖 이미지 (만화, 추상화 등) 에도 무조건 답변 → hallucination. v3 는 신뢰도 평가 layer 추가.
 
-**결과:** 학습 자체는 성공 (loss 2.44, 6분 43초), 그러나 응답이 **Flickr30k 캡션 패턴 모방에 그침**. "dog" 키워드만 잡고 나머지는 환각.
+#### 설계 (`src/ood_detection.py: OODDetector`)
 
-**얻은 것:** 멀티모달 융합 아키텍처 (`<image>` splice 로직, `inputs_embeds` 기반 generate, instruction-only label masking) 를 직접 구현하면서 LLaVA 의 내부 동작을 정확히 이해. **→ Stage 2 (Step 2 결정) 가 실제로 작동한 직접적 근거**: [Test A "왜 v2 잘하는 이유"](#-결과-results) 에서 instruction-only label masking 의 효과 입증.
+두 신호의 가중 합:
 
-### Step 2 — v1 한계 진단 + 다음 단계 결정
-v1 결과를 분석하고 **3가지 옵션** 을 검토:
+```
+ood_score = 0.6 × clip_signal + 0.4 × entropy_signal
 
-| 옵션 | 내용 | 결정 |
-|------|------|------|
-| A) 한계 인정 후 마무리 | 현재 수준으로 README 작성, "Stage 1 한계는 LLaVA 논문대로" 명시 | ❌ 단발 |
-| B) 같은 데이터 더 학습 | epoch ↑, 데이터 ↑ — 단순 양적 증가 | ❌ 방법론적 진보 없음 |
-| C) Stage 2 LoRA 추가 | LLaVA 정통 레시피 (instruction tuning) | ✅ **선택** |
+clip_signal:
+  - CLIP image-text similarity (57 in-dist 카테고리: 사람/개/차 등)
+  - similarity < 0.30 → clip_signal ↑ (in-dist 와 잘 안 맞음)
 
-**C 선택 이유:**
-- **포트폴리오 시그널:** "데이터 더 부어봤네" 보다 "LLaVA 학습 레시피를 정확히 이해하고 재현했네" 가 채용 담당자에게 훨씬 매력적
-- **이전 작업과의 연결성:** [unsloth-qlora-finetuning](https://github.com/AD-Styles/unsloth-qlora-finetuning) 의 LoRA 경험을 자연스럽게 확장
-- **NCA-GENL 자격증 준비** 와 시너지
+entropy_signal:
+  - LLM 첫 토큰의 logits → softmax → entropy
+  - 8 nats 기준 정규화 (Qwen2.5 vocab 152K, ln(152K) ≈ 11.93 의 ~67%)
+  - entropy 높음 → LLM 도 자신 없음 → entropy_signal ↑
 
-### Step 3 — v2 학습 중 발견한 데이터 함정
-첫 시도로 VQAv2 단독을 사용했더니 답변의 **90.6% 가 10글자 미만** (Yes/No 위주). 이대로 학습하면 모델이 "Yes." / "No." 만 반복하게 됨.
+is_ood = ood_score > 0.5  (default threshold)
+```
 
-**해결:** 3개 config 균형 믹스로 다양성 확보.
+#### 검증 (`scripts/test_ood_integration.py`)
 
-| Config | 비중 | 역할 |
-|--------|------|------|
-| `localized_narratives` | 33% | 긴 묘사 캡션 (캡셔닝 능력) |
-| `aokvqa` | 33% | 추론 답변 (이해 능력) |
-| `vqav2` | 33% | 짧은 사실 질문 (yes/no 자동 필터) |
+| 케이스 | clip_max_sim | clip_match (오인) | llm_entropy | ood_score | is_ood | 기대 | 판정 |
+|---|---|---|---|---|---|---|---|
+| In-Dist (실제 개) | 0.259 | 'a cat' | 3.99 | **0.365** | False | False | ✅ |
+| OOD (Pikachu, 카툰) | 0.232 | 'a boat' | 4.67 | **0.505** | True | True | ✅ |
 
-→ 평균 답변 길이 **~5글자 → 77.8글자 (15배 향상)**. 이 데이터 진단 단계가 v2 성공의 결정적 분기점.
+→ **2/2 정확 분류** (CLIP 이 dog→cat 오인하더라도 LLM entropy 와 가중치로 분리 가능).
 
-### Step 4 — v2 결과의 명과 암
-- ✅ **명:** 영문 VQA 4/5 정확 (Test A) — instruction tuning 이 작동
-- ⚠️ **암 1:** 한국어 catastrophic forgetting (Test B) — 학습 데이터 100% 영어의 부작용
-- ⚠️ **암 2:** OOD 입력에 환각 여전 (Test C) — 그러나 "체계적 오류" 로 진화
+> Calibration set 부족 인정 — 현재 2 케이스만. v4 에선 더 다양한 OOD set (의료 이미지, 추상화, 손글씨 등) 으로 threshold 재조정 필요.
 
-세 가지 모두 **사전에 예측 가능했던 한계**. 모르고 당한 게 아니라 **트레이드오프를 인지하고 진행한 결정의 결과**.
+---
 
-### Step 5 — 배포 용이성 시도 (실패에서 배운 것)
+## 🔬 ViT-L/14 Ablation (시도, 한계 발견)
 
-학습 완료 후, 1GB adapter 를 GitHub 100MB 제한에 맞추기 위해 **순수 LoRA 추출** 을 시도했습니다.
+### 동기
 
-**가설 (실패):** PEFT 가 저장한 `embed_tokens` / `lm_head` (총 ~1GB) 는 학습되지 않은 단순 보존용. 제거 후에도 inference 시 `resize_token_embeddings` 가 동적으로 재생성하므로 무영향. → 8.68 MB 슬림 adapter 로 충분할 것.
+v2 의 49 patches (ViT-B/32, 224×224) 는 시각적 detail 인식 약함. 가설:
 
-**실험:** [scripts/extract_lora.py](scripts/extract_lora.py) 로 LoRA 키 192개만 추출 (99.2% 축소).
+> "576 patches (ViT-L/14, 336×336) → 12배 더 많은 image tokens → 시각 인식 ↑"
 
-**결과:** Test A 5문항 중 3문항이 명확히 다른 응답.
+### 실행
 
-| 질문 | 원본 1GB | 슬림 8.68MB |
-|------|---------|------------|
-| What is in this image? | "Dog." ✅ | "Cat." ❌ |
-| What color is the dog? | "White." ✅ | "Brown and black." ❌ |
-| What is on the dog's head? | "Hat." ✅ | "Mittens." ❌ |
+```bash
+# Stage 1 — projector only (Flickr30k 5K, 1 epoch)
+python -m src.train --vision-model openai/clip-vit-large-patch14-336 --bf16 \
+  --data-path data/coco_subset/manifest.json \
+  --output-dir checkpoints/v3_step2_stage1 \
+  --batch-size 1 --grad-accum-steps 8 --epochs 1 --lr 1e-3
 
-> Q3 (Yes/No) 와 Q5 (Describe) 는 슬림에서도 비슷한 응답 — Yes/No 답변의 단순성 + Describe 의 환각 양쪽 모두 그대로 유지. 즉 정확도 손실은 **fact-based 질문 (Q1/Q2/Q4) 에 집중**됨.
+# Stage 2 — LoRA + projector (mix 13K, 2 epochs)
+python -m src.train --vision-model openai/clip-vit-large-patch14-336 --bf16 \
+  --data-path data/v3_step1_korean/manifest.json \
+  --output-dir checkpoints/v3_step2_stage2 \
+  --init-projector checkpoints/v3_step2_stage1/projector.pt \
+  --use-lora --lora-r 16 --lora-alpha 32 \
+  --batch-size 1 --grad-accum-steps 8 --epochs 2 --lr 2e-4
+```
 
-**가설 반증.** `embed_tokens` 는 단순 보존이 아니라 학습된 상태의 일부였습니다. 추정 원인:
-- Qwen2.5 의 `tie_word_embeddings=True` → LoRA gradient 가 `lm_head` 를 거쳐 `embed_tokens` 까지 미세 영향
-- 또는 PEFT 가 resize 감지 시 silent unfreeze
-- 정확한 메커니즘 분석은 v3 의 과제
+| 단계 | 시간 | Final loss | 메모 |
+|---|---|---|---|
+| Stage 1 | 27분 | 2.55 | projector 3.6 MB (bf16) |
+| Stage 2 | 172분 | 1.17 | projector 3.3 MB + LoRA 526 MB (bf16) |
+| **합계** | **199분** | | **8GB VRAM peak: 6.99 GB (87.4%)** |
 
-**얻은 교훈:** PEFT 의 `save_embedding_layers="auto"` 는 단순 저장 옵션이 아니다. 함부로 제거 시 모델 품질 손실.
+### 결과
 
-**결정:** Hugging Face Hub 으로 1GB 그대로 배포 → 위의 [Pre-trained 가중치 링크](https://huggingface.co/AD-Styles/mini-llava-stage2) 참조.
+`scripts/test_step2_vitL14.py` (sampling temperature=0.7):
 
-### Step 6 — 다음으로 무엇을 할 것인가 (v3 로드맵)
+| Test | Step 1 (ViT-B/32) 응답 | Step 2 (ViT-L/14) 응답 | 판정 |
+|---|---|---|---|
+| 영문 dog | "I can see a cat..." | "**a baby** wearing red and white color dress" | 모두 미인식 (오인 패턴 다름) |
+| 한국어 dog | 케이크/바위 hallucination | 아이/물/바닥 hallucination | 모두 hallucination |
 
-1. **한국어 instruction 데이터 30%+ 추가** — KoLLaVA / KoVQA / DeepL 번역 → catastrophic forgetting 해소
-2. **CLIP-ViT-L/14 (576 patches) 업그레이드** — 49 → 576 patch (16배 해상도) → 세부/OOD 인식 ↑
-3. **OOD detection module** — CLIP similarity threshold 또는 entropy-based confidence → "모른다" 학습
-4. **`tie_word_embeddings=False` 로 재학습** — Step 5의 가설 검증 + 슬림 adapter 재시도
-5. **vLLM / Triton Inference Server 통합** — [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 와 연계, 프로덕션 서빙
+→ **시각 인식 미개선** (단 색상/장면 detail 은 더 정확히 검출 — "red and white" 가 헤드밴드 색 일치).
 
-이 5단계가 **v3 의 출발점**이 됩니다.
+### 원인 분석
+
+**0.5B LLM 의 visual reasoning 한계가 진짜 bottleneck.**
+
+- LLaVA-1.5 가 ViT-L/14 + Vicuna-**7B** 로 성공한 이유 → LLM 이 14배 큼
+- 우리는 LLM 이 0.5B → 576 patches 의 정보를 활용할 처리 능력 부족
+- Vision encoder 만 키워도 **작은 LLM 이 정보를 활용 못 하면 무용**
+
+### 결론
+
+> **"vision encoder size ≠ VLM 능력 (small LLM regime)"**
+
+→ v3 는 ViT-B/32 유지. ViT-L/14 weights 는 disk 보존하나 **deploy X**.
+→ v4 에선 LLM size up (Qwen2.5-1.5B / 3B) 후 ViT-L/14 재시도가 자연스러운 다음 실험.
+
+---
+
+## 💡 회고록 (v3 Journey)
+
+### Step 0 — 사전 검증의 가치 발견
+
+v3 시작 전 원칙: **"학습 시간 낭비 0"**
+
+- Phase 0 (CPU 분석) → 가설 검증
+- Phase 1 (최소 GPU 검증) → 효과 입증
+- Decision point → retraining 정당화 여부 결정
+
+**이 원칙이 Step 4 에서 결정적으로 작용** — 3시간 retraining 가설을 30분 분석으로 무력화.
+
+---
+
+### Step 1 — Korean 데이터 추가 (성공)
+
+**시도:** KoLLaVA-Instruct-150k (DeepL 한국어 번역) 4K + 영문 9K mix → Stage 2 LoRA 재학습
+
+**도전:** 다운로드 hang 사고 (마지막 2개 이미지 무한 대기). `scripts/_recover_manifest.py` 로 5,200 다운로드 완료 이미지에서 manifest 복구.
+
+**결과:** 한국어 응답 정상 생성 ✅ (catastrophic forgetting 해소)
+
+**학습:** 외부 의존성 (urllib timeout 미설정) 의 무한 대기 가능성. 향후 timeout + 부분 결과 복구 디자인 필수.
+
+---
+
+### Step 2 — ViT-L/14 시도 (실패, ablation)
+
+**시도:** 가설 "576 patches → 시각 인식 ↑". Stage 1 + Stage 2 학습 (~3시간).
+
+**과정의 어려움:**
+- VRAM 8GB 제약 → bf16 + batch=1 + grad_accum=8 강제
+- bf16 dtype 불일치 (vision output fp32 promote → projector bf16 충돌) — `encode_image` 에 dtype 정렬 로직 추가
+
+**결과:** 시각 인식 미개선. 색상/장면 detail 은 향상되나 주체 식별 실패.
+
+**학습:** **"vision encoder size ≠ VLM 능력 (small LLM regime)"**. LLM 이 작으면 vision capacity up 만으로는 한계. v4 의 LLM size up 으로 진정한 검증 가능.
+
+---
+
+### Step 3 — OOD Module 통합
+
+**시도:** CLIP image-text similarity + LLM entropy 가중 합.
+
+**도전:** transformers 5.x 호환성 — `get_text_features` 가 `BaseModelOutputWithPooling` 반환 (4.x 의 Tensor 직접 반환과 다름). `hasattr` 분기로 양쪽 호환.
+
+**결과:** 2/2 케이스 정확 분류 ✅
+
+**학습:** 새 dependency 사용 시 API 변경 가능성. 호환 layer 도입의 가치.
+
+---
+
+### Step 4 — Slim Adapter Breakthrough (사전 분석의 승리)
+
+**초기 가설 (3시간 cost):** "tied_embeddings 가 원인 → untie + 재학습"
+
+**Phase 0.1.5 사전 분석 (5분):**
+- saved embed_tokens 의 첫 151665 행 = base Qwen2.5 와 정확히 일치 (max diff 0.0)
+- 학습된 부분 = 마지막 1 행 (`<image>` 토큰) 뿐
+
+**깨달음:** "PEFT 가 자동 저장하는 1 GB 의 99.9994% 가 base 그대로의 사본". v2 가 실패한 이유는 `<image>` 행까지 drop 했기 때문.
+
+**해결:** `scripts/extract_lora_v3.py` 로 8.28 MB 추출 + `model.py.load_lora_adapter()` 가 마지막 row 자동 patch.
+
+**검증:** greedy 7/7 비트 단위 일치 → 무손실.
+
+**학습:** **"학습으로 풀 문제 vs 분석으로 풀 문제"** 구분의 중요성. 가설 → 즉시 학습 reflexes 의존하지 말 것. **30분 분석 = 3시간 학습 절약 + 더 깊은 이해**.
+
+---
+
+### Step 5 — 다음으로 무엇을 (v4 로드맵)
+
+| 항목 | 근거 | 예상 효과 |
+|---|---|---|
+| 1. **LLM size up — Qwen2.5-1.5B / 3B** | Step 2 의 ViT-L/14 한계 분석 | ViT-L/14 의 진정한 잠재력 발휘, 시각 인식 ↑ |
+| 2. **OOD calibration set 확장** | 현재 2 케이스만 검증 | threshold 일반화 + ROC 분석 |
+| 3. **Multi-turn 대화 지원** | 현재 single-turn | 실용성 ↑ |
+| 4. **vLLM / Triton 통합** | 현재 transformers `.generate()` | latency / throughput ↑ — [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 와 연계 |
 
 ---
 
 ## ⚠️ 한계 (Limitations) — 정직한 한계 명시
 
-| 한계 | 진단 | 해결 방향 |
-|------|------|----------|
-| **🔴 모델 한계** | | |
-| 한국어 응답 약함 | LoRA의 catastrophic forgetting | 한국어 데이터 추가 학습 (Step 6-1) |
-| OOD (만화) 환각 | CLIP-ViT-B/32 표현 한계 | ViT-L/14 업그레이드 + OOD detection (Step 6-2, 6-3) |
-| Hallucination ("모른다" 못 함) | VLM 공통 문제 | Confidence calibration (Step 6-3) |
-| LoRA adapter 1GB | embedding resize → PEFT가 embed_tokens 자동 저장 (학습 상태 포함) | HF Hub 로 배포 (Step 5 — 단순 분리는 품질 손실 확인됨) |
-| **🟡 구현 한계** | | |
-| 단일 이미지만 지원 | 구현 단순화 | Multi-image / video 확장 |
-| 학습 resume 불가 | optimizer state 미저장 | accelerate 통합 |
+| 한계 | 영향 | 대응 |
+|---|---|---|
+| **0.5B LLM 의 visual reasoning** | 시각 detail 인식 약함 (Hello Kitty 헤드밴드 → cat 오인 등) | v4: LLM size up |
+| **OOD calibration 2 케이스** | threshold 0.5 가 일반화 보장 X | v4: 다양한 OOD set 으로 ROC 분석 |
+| **Korean training data 4K** | 답변 hallucination 잔존 | 더 많은 Korean instruction data |
+| **LoRA rank 16** | 표현력 제한 | rank 32+ 실험 (시간 trade-off) |
+| **Single-turn only** | 실제 사용 시 불편 | v4: multi-turn |
+| **8GB VRAM 제약** | batch size / model size 제한 | A100 / H100 등 큰 GPU 환경에서 재학습 시 정확도 ↑ 가능 |
 
 ---
 
 ## 🔗 참고 자료 (References)
 
-- Liu et al., **"Visual Instruction Tuning"** (LLaVA-1, NeurIPS 2023) — [arxiv:2304.08485](https://arxiv.org/abs/2304.08485)
-- Liu et al., **"Improved Baselines with Visual Instruction Tuning"** (LLaVA-1.5, 2023) — [arxiv:2310.03744](https://arxiv.org/abs/2310.03744)
-- Radford et al., **"CLIP"** (ICML 2021) — [arxiv:2103.00020](https://arxiv.org/abs/2103.00020)
-- Qwen Team, **"Qwen2.5 Technical Report"** (Alibaba, 2024) — [arxiv:2412.15115](https://arxiv.org/abs/2412.15115)
-- Hu et al., **"LoRA: Low-Rank Adaptation"** (ICLR 2022) — [arxiv:2106.09685](https://arxiv.org/abs/2106.09685)
-- Laurençon et al., **"What matters when building VLMs?"** (the_cauldron, 2024) — [arxiv:2405.02246](https://arxiv.org/abs/2405.02246)
+- **LLaVA-1.5** — Liu et al. (2023), [Improved Baselines with Visual Instruction Tuning](https://arxiv.org/abs/2310.03744)
+- **Qwen2.5** — Yang et al. (2024), [Qwen2.5 Technical Report](https://arxiv.org/abs/2412.15115)
+- **KoLLaVA** — tabtoyou (2024), [KoLLaVA-Instruct-150k Dataset](https://huggingface.co/datasets/tabtoyou/KoLLaVA-Instruct-150k) (DeepL 번역, CC-BY-NC-4.0)
+- **PEFT** — Mangrulkar et al. (2022), [PEFT: State-of-the-art Parameter-Efficient Fine-Tuning](https://github.com/huggingface/peft)
+- **CLIP** — Radford et al. (2021), [Learning Transferable Visual Models From Natural Language Supervision](https://arxiv.org/abs/2103.00020)
+
+### 관련 portfolio 레포
+
+- **v2 baseline (직전 버전)**: [AD-Styles/vlm-from-scratch](https://github.com/AD-Styles/vlm-from-scratch) — 이 v3 가 개선한 출발점
+- **production serving (계획)**: [AD-Styles/nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) — Step 5 의 vLLM/Triton 통합 대상
