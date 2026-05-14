@@ -37,7 +37,7 @@ lora_adapter_slim/
 └─ README.md (PEFT auto-generated)
 ```
 
-**v2 대비 −99.21%** (1045 MB → 8.28 MB) — slim 화 원리는 [GitHub README §Slim Adapter](https://github.com/AD-Styles/vlm-from-scratch-v3#2%EF%B8%8F%E2%83%A3-slim-adapter--1045-mb--828-mb-%EC%9E%AC%ED%95%99%EC%8A%B5-0) 참조.
+**v2 대비 −99.21%** (1045 MB → 8.28 MB) — slim 화 원리는 [GitHub README §Slim Adapter](https://github.com/AD-Styles/vlm-from-scratch-v3#step-4--slim-adapter-1045-mb--828-mb-출력-변화-없음) 참조.
 
 ## 🚀 Quick Start
 
@@ -100,7 +100,7 @@ detector = OODDetector(threshold=0.5, device="cpu")
 ### 🟡 변하지 않은 것 (정직한 명시)
 
 - 이미지 이해 정확도 — 0.5B LLM 한계로 v2/v3 동일 수준 (v4 LLM size up 으로 해결 예정)
-- 영문 VQA head-to-head — v2 vs v3 비교는 미측정
+- 영문 VQA — v3 baseline 36.67% (v2 34.67% 대비 +2.00%p, VQAv2 50 samples greedy decoding 기준)
 
 ## 🧠 학습 데이터 (Step 1, 175분)
 
