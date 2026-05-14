@@ -264,11 +264,13 @@ class MiniLLaVA(nn.Module):
     # Checkpoint I/O — projector만 저장 (LLM/CLIP은 HF에서 다시 로드)
     # ──────────────────────────────────────────────────────────────────
     def save_projector(self, path: str) -> None:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        dir_path = os.path.dirname(path)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
         torch.save(self.projector.state_dict(), path)
 
     def load_projector(self, path: str, map_location: str = "cpu") -> None:
-        state = torch.load(path, map_location=map_location)
+        state = torch.load(path, map_location=map_location, weights_only=True)
         self.projector.load_state_dict(state)
 
     def load_lora_adapter(self, adapter_path: str) -> None:
