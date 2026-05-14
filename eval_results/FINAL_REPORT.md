@@ -43,9 +43,7 @@
 | Recall (yes) | 100.00% | 100.00% | 53.33% | -46.67%p |
 | F1 (yes) | 0.667 | 0.667 | 0.640 | -0.027 |
 
-> 🚨 **Baseline 의 50% / F1 0.667 은 함정**: v2/v3 baseline 둘 다 모든 POPE 질문에 무조건 "Yes" 답변 (yes-bias) → 정확도 50% 는 random 수준.
-> v3-enhanced 의 CLIP image-text grounding 으로 진짜 evidence 기반 yes/no 결정 →
-> **정확도 +20%p, precision +30%p** 의 의미 있는 개선.
+> 🚨 **Baseline 50% 는 yes-bias 로 인한 random 수준**. CLIP image-text grounding 으로 evidence 기반 yes/no 결정 → **정확도 +20%p, precision +30%p** 의 의미 있는 개선.
 
 ---
 

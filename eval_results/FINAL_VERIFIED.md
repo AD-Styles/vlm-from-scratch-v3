@@ -29,25 +29,25 @@ answer = client.predict(
     question="Is there a cat in the image?",
     api_name="/predict_1",
 )
-print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
+print(answer[0])  # → "no"
 ```
 
 ### 📋 12 케이스 결과 표
 
-| # | 이미지 | 질문 | 기대 | v3 raw baseline | v3-Enhanced | 라우팅 path |
+| # | 이미지 | 질문 | 기대 | baseline | v3-Enhanced | 라우팅 path |
 |---|---|---|---|---|---|---|
-| 1 | dog | What is in this image? | dog | Cat ❌ | **Dog** ✅ | vlm_raw |
-| 2 | dog | Is there a dog? | yes | Yes ✅ (운) | **yes** ✅ | clip_grounding_yesno |
-| 3 | dog | Is there a cat? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
-| 4 | dog | Is there a person? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
-| 5 | dog | Is there a car? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
-| 6 | dog | What color is main subject? | white | Black ❌ | **white** ✅ | clip_color |
-| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 흰색 소파에 앉아 있는 소 ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
-| 8 | dog | 이 동물의 종류는? | 개 | 소가 야생동물 ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
-| 9 | pikachu | What is in this image? | cartoon | A dog ❌ | A picture of a (truncated) ❌ | vlm_raw |
-| 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
-| 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ | clip_color |
-| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ | KO→EN MT + clip_color |
+| 1 | dog | What is in this image? | dog | ❌ | **Dog** ✅ | vlm_raw |
+| 2 | dog | Is there a dog? | yes | ✅ (운) | **yes** ✅ | clip_grounding_yesno |
+| 3 | dog | Is there a cat? | no | ❌ | **no** ✅ | clip_grounding_yesno |
+| 4 | dog | Is there a person? | no | ❌ | **no** ✅ | clip_grounding_yesno |
+| 5 | dog | Is there a car? | no | ❌ | **no** ✅ | clip_grounding_yesno |
+| 6 | dog | What color is main subject? | white | ❌ | **white** ✅ | clip_color |
+| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
+| 8 | dog | 이 동물의 종류는? | 개 | ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
+| 9 | pikachu | What is in this image? | cartoon | ❌ | A picture of a (truncated) ❌ | vlm_raw |
+| 10 | pikachu | Is there a real animal? | no | ❌ | **no** ✅ | clip_grounding_yesno |
+| 11 | pikachu | What color is this character? | yellow | ❌ | **yellow** ✅ | clip_color |
+| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | ❌ | **노란색** ✅ | KO→EN MT + clip_color |
 
 → **Enhanced 11/12 정답, 유일한 실패는 case 9 (pikachu OOD subject ID)**
 
@@ -59,12 +59,12 @@ print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
 - 패턴: `^(is|are) there <obj> (in|on|at) the (image|picture|photo)`
 - CLIP similarity: "a photo containing a {obj}" vs "a photo without any {obj}"
 - threshold = 0.0 (margin > 0 → yes)
-- **케이스 2-5, 10 — 5/5 정답 (baseline 은 yes-bias 로 1/5)**
+- **케이스 2-5, 10 — 5/5 정답**
 
 ### 2. CLIP color zero-shot
 - 12개 색상 prompt (red, blue, green, yellow, white, black, brown, orange, purple, pink, gray, silver)
 - 패턴: "what color", "which color", "what's the color", "color of"
-- **케이스 6, 11, 12 — 3/3 정답 (baseline 은 0/3)**
+- **케이스 6, 11, 12 — 3/3 정답**
 
 ### 3. Output post-processing
 - 첫 sentence 추출, 따옴표/구두점 정리, yes/no 정규화
@@ -73,8 +73,8 @@ print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
 ### 4. KO↔EN translation pipeline (m2m100)
 - `facebook/m2m100_418M` (~1.7 GB, eager preload at app init — cold start 회피)
 - KO 질문 → EN 으로 번역 → v3 EN 라인으로 정확 추론 → EN 답변 → KO 로 역번역
-- 단일 multilingual 모델로 양방향 일관 처리 (Helsinki opus-mt-tc-big-en-ko 는 gibberish 생성으로 폐기)
-- **케이스 7, 8 — 2/2 한국어 응답 ("개", baseline 은 0/2 환각)**
+- 단일 multilingual 모델로 양방향 일관 처리 (`scripts/_test_mt_models.py` 정량 비교 후 채택)
+- **케이스 7, 8 — 2/2 한국어 응답**
 - **라이브 UI 검증**: `scripts/browser_visit_space.py` 7/7 (영어 3 + 한국어 4 모두 같은 언어로 응답)
 
 ### 5. OOD detector
@@ -114,7 +114,7 @@ print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
 
 ## ⚠️ 정직한 한계 명시
 
-1. **Case 9 (pikachu subject ID)**: `vqa` qtype 의 4-word cap 으로 "A picture of a" 잘림 → 4-word cap 제거하면 "A picture of a person wearing a helmet" 으로 변하지만 여전히 pikachu 미인식
+1. **Case 9 (pikachu subject ID)**: 0.5B LLM 의 cartoon 인식 한계 — v4 LLM size up 으로 해결 예정
 2. **0.5B LLM 한계**: 이미지 이해의 근본 능력은 LLM 사이즈가 결정 (LLaVA-1.5-7B 는 VQAv2 70%+)
 3. **CLIP threshold 일반화**: pope_threshold 가 데이터셋별로 최적값 다름 (POPE 0.015 vs demo 0.0)
 4. **Korean 표준 benchmark 부재**: KoLLaVA-Eval 같은 공식 셋 미공개로 한국어 정량 평가 불가

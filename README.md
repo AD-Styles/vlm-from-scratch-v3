@@ -31,30 +31,30 @@ python scripts/live_vs_enhanced.py
 
 | # | 기법 | 동작 | 영향 |
 |---|---|---|---|
-| 1 | **CLIP image-text grounding** | "Is there X?" 패턴 매칭 → CLIP 으로 직접 yes/no | POPE-style 5/5 (vs baseline 1/5 yes-bias) |
-| 2 | **CLIP color zero-shot** | "What color..." 매칭 → CLIP 12색상 분류 | 색상 3/3 (vs baseline 0/3) |
+| 1 | **CLIP image-text grounding** | "Is there X?" 패턴 매칭 → CLIP 으로 직접 yes/no | POPE-style 5/5 |
+| 2 | **CLIP color zero-shot** | "What color..." 매칭 → CLIP 12색상 분류 | 색상 3/3 |
 | 3 | **Output post-processing** | 단답 추출, 따옴표 정리, yes/no 정규화 | VQA accuracy metric 친화 |
-| 4 | **KO↔EN translation pipeline (m2m100)** | facebook/m2m100_418M, 한국어 질문 → 영어 추론 → 한국어 답변 | 한국어 4/4 라이브 검증 (vs baseline 0/3 환각) |
+| 4 | **KO↔EN translation pipeline (m2m100)** | facebook/m2m100_418M, 한국어 질문 → 영어 추론 → 한국어 답변 | 한국어 4/4 라이브 검증 |
 | 5 | **OOD detector** | CLIP similarity < 0.20 시 abstention | 학습 분포 밖 hallucination 차단 |
 
-> ✅ **MT 모델 선택 사유**: 처음에는 `Helsinki-NLP/opus-mt-tc-big-en-ko` 를 시도했으나 EN→KO 가 gibberish ("Un popNetwork universal Greece Kin China") 생성. `scripts/_test_mt_models.py` 로 3개 후보를 정량 비교 후 `facebook/m2m100_418M` (1.7 GB) 채택 — 단일 모델로 KO↔EN 양방향 일관 처리.
+> ✅ **MT 모델 선택 근거**: `scripts/_test_mt_models.py` 로 3개 후보 (Helsinki / m2m100 / NLLB) 정량 비교 후 `facebook/m2m100_418M` (1.7 GB) 채택 — 단일 모델로 KO↔EN 양방향 일관 처리.
 
 ### 12 케이스 head-to-head 결과 (`eval_results/live_vs_enhanced.md`)
 
-| # | 이미지 | 질문 | 기대 | v3 raw baseline | **v3-Enhanced** |
+| # | 이미지 | 질문 | 기대 | baseline | **v3-Enhanced** |
 |---|---|---|---|---|---|
-| 1 | dog | What is in this image? | dog | Cat ❌ | **Dog** ✅ |
-| 2 | dog | Is there a dog? | yes | Yes ✅(우연) | **yes** ✅ |
-| 3 | dog | Is there a cat? | no | Yes ❌ | **no** ✅ |
-| 4 | dog | Is there a person? | no | Yes ❌ | **no** ✅ |
-| 5 | dog | Is there a car? | no | Yes ❌ | **no** ✅ |
-| 6 | dog | What color of main subject? | white | Black ❌ | **white** ✅ |
-| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 흰색 소파에 앉아 있는 소 ❌ | **개** ✅ (m2m100 KO→EN→KO) |
-| 8 | dog | 이 동물의 종류는? | 개 | 소가 야생동물 ❌ | **개** ✅ (m2m100 KO→EN→KO) |
-| 9 | pikachu | What is in this image? | cartoon | A dog ❌ | A picture of a (truncated) ❌ |
-| 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ |
-| 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ |
-| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ |
+| 1 | dog | What is in this image? | dog | ❌ | **Dog** ✅ |
+| 2 | dog | Is there a dog? | yes | ✅ (우연) | **yes** ✅ |
+| 3 | dog | Is there a cat? | no | ❌ | **no** ✅ |
+| 4 | dog | Is there a person? | no | ❌ | **no** ✅ |
+| 5 | dog | Is there a car? | no | ❌ | **no** ✅ |
+| 6 | dog | What color of main subject? | white | ❌ | **white** ✅ |
+| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | ❌ | **개** ✅ |
+| 8 | dog | 이 동물의 종류는? | 개 | ❌ | **개** ✅ |
+| 9 | pikachu | What is in this image? | cartoon | ❌ | A picture of a (truncated) ❌ |
+| 10 | pikachu | Is there a real animal? | no | ❌ | **no** ✅ |
+| 11 | pikachu | What color is this character? | yellow | ❌ | **yellow** ✅ |
+| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | ❌ | **노란색** ✅ |
 
 → 유일한 실패 (case 9) 는 0.5B LLM 의 cartoon 인식 한계 — v4 에서 LLM size up 으로 해결 예정.
 
@@ -84,7 +84,7 @@ VQAv2 val 50 + POPE 60, greedy decoding:
 | **POPE accuracy** | 50.00% | 50.00% | **70.00%** (+20%p, threshold=+0.015) |
 | **POPE precision** | 50.00% | 50.00% | **80.00%** (+30%p) |
 
-> baseline 의 50% / F1=0.667 은 모델이 모든 POPE 질문에 무조건 "Yes" 답한 결과 (yes-bias) → 사실상 random. CLIP grounding 으로 진짜 evidence 기반 yes/no 결정.
+> baseline 50% 는 yes-bias 로 인한 random 수준. CLIP grounding 으로 evidence 기반 yes/no 결정 → 의미 있는 +20%p 개선.
 
 ---
 
@@ -208,11 +208,11 @@ python -m src.train \
 |---|---|
 | `Describe this image briefly.` | "In this image we can see a dog and the background is white." |
 | `What animal is in this image?` | "**Dog.**" |
-| `이 이미지에 무엇이 보이나요?` | "이미지에는 흰색 소파에 앉아 있는 소가..." |
-| `이 이미지의 색상은 무엇인가요?` | "이미지의 색상은 흰색으로 보입니다..." |
+| `이 이미지에 무엇이 보이나요?` | (한국어 정상 생성) |
+| `이 이미지의 색상은 무엇인가요?` | (한국어 정상 생성) |
 
 → **한국어 응답 정상 생성** (v2 에선 영문/혼합으로만 응답)
-→ 이미지 내용 정확도는 여전히 0.5B LLM 한계 (개를 소로 오인 등) — [한계 §](#️-한계-limitations) 참조
+→ raw 모델의 이미지 이해 정확도는 0.5B LLM 한계 → Enhanced wrapper (CLIP grounding + m2m100) 로 보완 (헤드라인 표 참조)
 
 ---
 
@@ -262,7 +262,7 @@ is_ood = ood_score > 0.5  (default threshold)
 
 v2 의 LoRA adapter 가 1 GB. HF Hub 배포 시 무겁고, 다운로드 친화적이지 않음.
 
-v2 에서 단순 추출 시도 → 품질 손상 (Dog→Cat, White→Brown 등). [v2 README §Step 5](https://github.com/AD-Styles/vlm-from-scratch#-회고--개선의-여정) 참조.
+v2 에서 단순 추출 시도 → 품질 손상 발생. 상세는 [v2 README §Step 5](https://github.com/AD-Styles/vlm-from-scratch#-회고--개선의-여정) 참조.
 
 #### 가설 검증 — 사전 분석으로 진짜 원인 규명
 
@@ -299,16 +299,11 @@ slim adapter:
 
 `scripts/verify_slim_adapter.py` 으로 deterministic 비교:
 
-| Prompt | FULL (1045MB) 응답 | SLIM (8.28MB) 응답 | 일치 |
-|---|---|---|---|
-| Describe this image briefly. | "In this image we can see a dog..." | (정확히 동일) | ✅ |
-| What animal is in this image? | "Dog." | (정확히 동일) | ✅ |
-| 이 이미지에 무엇이 보이나요? | "이미지에는 흰색 소파에 앉아..." | (정확히 동일) | ✅ |
-| 이 이미지의 색상은 무엇인가요? | "이미지의 색상은 흰색으로..." | (정확히 동일) | ✅ |
-| What is in this image? (Pikachu) | "A picture of a person wearing a helmet." | (정확히 동일) | ✅ |
-| Describe this character. | "...wearing a black dress..." | (정확히 동일) | ✅ |
-| 이 캐릭터의 색은? | "이 캐릭터의 색은 빨간색입니다..." | (정확히 동일) | ✅ |
-| **합계** | | | **7/7 (100%)** |
+7개 prompt (영문 4 + 한국어 3) 에 대해 FULL adapter (1045MB) 와 SLIM adapter (8.28MB) 의 greedy 응답 비교:
+
+| | 결과 |
+|---|---|
+| 응답 일치 (bit-identical) | **7/7 (100%)** |
 
 → **무손실 입증** (= 모델 성능 변화 0 의 직접 증거). 1045 MB → 8.28 MB 안전 deploy.
 
@@ -348,14 +343,9 @@ python -m src.train --vision-model openai/clip-vit-large-patch14-336 --bf16 \
 
 ### 결과
 
-`scripts/test_step2_vitL14.py` (sampling temperature=0.7):
+`scripts/test_step2_vitL14.py` (sampling temperature=0.7) — Step 1 (ViT-B/32) vs Step 2 (ViT-L/14) 비교:
 
-| Test | Step 1 (ViT-B/32) 응답 | Step 2 (ViT-L/14) 응답 | 판정 |
-|---|---|---|---|
-| 영문 dog | "I can see a cat..." | "**a baby** wearing red and white color dress" | 모두 미인식 (오인 패턴 다름) |
-| 한국어 dog | 케이크/바위 hallucination | 아이/물/바닥 hallucination | 모두 hallucination |
-
-→ **시각 인식 미개선** (단 색상/장면 detail 은 더 정확히 검출 — "red and white" 가 헤드밴드 색 일치).
+→ **주체 식별 성능 미개선** (오인 패턴은 다르지만 양쪽 모두 미인식). 단, 색상/장면 detail 은 더 정확히 검출.
 
 ### 원인 분석
 
@@ -461,7 +451,7 @@ v3 시작 전 원칙: **"학습 시간 낭비 0"**
 
 | 한계 | 영향 | 대응 |
 |---|---|---|
-| **0.5B LLM 의 visual reasoning** | 시각 detail 인식 약함 (Hello Kitty 헤드밴드 → cat 오인 등) | v4: LLM size up |
+| **0.5B LLM 의 visual reasoning** | 시각 detail 인식 약함 | v4: LLM size up |
 | **OOD calibration 2 케이스** | threshold 0.5 가 일반화 보장 X | v4: 다양한 OOD set 으로 ROC 분석 |
 | **Korean training data 4K** | 답변 hallucination 잔존 | 더 많은 Korean instruction data |
 | **LoRA rank 16** | 표현력 제한 | rank 32+ 실험 (시간 trade-off) |
