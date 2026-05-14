@@ -101,6 +101,12 @@ def parse_args() -> TrainConfig:
         help="v3 bonus: lm_head ↔ embed_tokens 분리 → LoRA adapter slim 화 실험. "
              "PEFT 가 adapter 저장 시 embed_tokens 자동 포함 안 됨 → 1GB → ~50MB 목표.",
     )
+    p.add_argument(
+        "--bf16",
+        action="store_true",
+        help="bfloat16 학습 — v3 의 ViT-L/14 (576 patches × 1024 hidden) 메모리 대응. "
+             "8GB VRAM 에서 ViT-L/14 + LoRA 동시 학습 시 필수.",
+    )
     args = p.parse_args()
     return TrainConfig(**vars(args))
 
@@ -113,15 +119,17 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[device] {device}")
 
+    dtype = torch.bfloat16 if cfg.bf16 else torch.float32
     print(
         f"[init] loading MiniLLaVA (vision={cfg.vision_model}, "
-        f"untie_embeddings={cfg.untie_embeddings}) ..."
+        f"dtype={dtype}, untie_embeddings={cfg.untie_embeddings}) ..."
     )
     model = MiniLLaVA(
         vision_model_name=cfg.vision_model,
         freeze_vision=True,
         freeze_llm=not cfg.use_lora,
         untie_embeddings=cfg.untie_embeddings,
+        torch_dtype=dtype,
     )
     if cfg.init_projector and os.path.exists(cfg.init_projector):
         print(f"[init] loading existing projector → {cfg.init_projector}")

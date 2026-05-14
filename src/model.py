@@ -93,6 +93,11 @@ class MiniLLaVA(nn.Module):
         vision_hidden = self.vision.config.hidden_size
         llm_hidden = self.llm.config.hidden_size
         self.projector = MultiModalProjector(vision_hidden, llm_hidden)
+        # projector 의 dtype 을 LLM 과 일치시킴 (bf16 학습 시 mixed-dtype 충돌 방지)
+        # 단 trainable 파라미터의 fp32 master weight 는 optimizer 가 별도 관리할 수 있으므로
+        # 학습 안정성보다 dtype 일관성을 우선
+        if torch_dtype != torch.float32:
+            self.projector = self.projector.to(torch_dtype)
 
         if freeze_vision:
             for p in self.vision.parameters():
@@ -130,9 +135,21 @@ class MiniLLaVA(nn.Module):
     # Encoding
     # ──────────────────────────────────────────────────────────────────
     def encode_image(self, pixel_values: torch.Tensor) -> torch.Tensor:
-        """[B, 3, H, W] → [B, N_patches, D_llm]. CLS 토큰 제외."""
+        """[B, 3, H, W] → [B, N_patches, D_llm]. CLS 토큰 제외.
+
+        bf16 학습 시 dataloader 의 fp32 pixel_values + vision/projector 의 bf16
+        가중치가 충돌하지 않도록 양쪽 모두 dtype 정렬.
+        """
+        # 1) vision encoder dtype 에 맞춰 pixel_values 변환
+        vision_dtype = next(self.vision.parameters()).dtype
+        if pixel_values.dtype != vision_dtype:
+            pixel_values = pixel_values.to(vision_dtype)
         outputs = self.vision(pixel_values=pixel_values)
         patch_features = outputs.last_hidden_state[:, 1:, :]
+        # 2) projector dtype 에 맞춰 patch_features 변환 (CLIP 이 fp32 로 promote 하는 경우 대비)
+        proj_dtype = next(self.projector.parameters()).dtype
+        if patch_features.dtype != proj_dtype:
+            patch_features = patch_features.to(proj_dtype)
         return self.projector(patch_features)
 
     # ──────────────────────────────────────────────────────────────────

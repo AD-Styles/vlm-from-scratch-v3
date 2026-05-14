@@ -53,6 +53,10 @@ class TrainConfig:
     # → PEFT adapter 저장 시 embed_tokens 자동 포함 X → 1GB → ~50MB 목표
     untie_embeddings: bool = False
 
+    # bf16 학습 — v3 의 ViT-L/14 (576 patches × 1024 hidden) 메모리 대응
+    # CLIP-ViT-L/14 + Qwen2.5-0.5B + LoRA 가 8GB VRAM 에 들어가려면 bf16 필수
+    bf16: bool = False
+
 
 @dataclass
 class GenerationConfig:
