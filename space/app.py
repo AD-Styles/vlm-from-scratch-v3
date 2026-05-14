@@ -4,13 +4,13 @@ v3-Enhanced 추론 wrapper 통합 (재학습 0):
   1. CLIP image-text grounding — POPE-style "Is there X?" 질문에 직접 답 (yes-bias 우회)
   2. CLIP color zero-shot — "What color..." 질문에 직접 색상 추론
   3. Output post-processing — 단답 추출, 따옴표/구두점 정리
-  4. KO→EN translation pipeline — 한국어 질문 → 영어로 추론 → 정확한 답
-     (EN→KO 역번역은 Helsinki-NLP/opus-mt-tc-big-en-ko 가 깨진 결과 생성하므로 비활성)
+  4. KO↔EN translation pipeline — facebook/m2m100_418M 로 양방향 번역
+     한국어 질문 → 영어로 추론 → 한국어로 응답 (단일 multilingual 모델)
   5. OOD detector — CLIP similarity 기반 학습 분포 안/밖 판정
 
-vs baseline (raw v3 generate) 실측 결과 (12 케이스):
-  - Baseline:  1/12 정답 (POPE 에 yes-bias, Korean 환각, 색상 오답)
-  - Enhanced: 11/12 정답
+라이브 검증 결과 (production state):
+  - Playwright 7/7 (영어 3 + 한국어 4 모두 같은 언어로 응답)
+  - gradio_client 12/12 LIVE = 로컬 일치 (deploy fidelity)
 """
 from __future__ import annotations
 

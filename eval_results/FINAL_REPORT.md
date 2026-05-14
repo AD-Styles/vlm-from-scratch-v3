@@ -69,10 +69,11 @@
 - 따옴표/구두점 제거, 첫 sentence 추출, 4단어 cap
 - VQA accuracy 변화 X (normalize 가 이미 처리)
 
-### 5. Korean → English → Korean 번역 파이프라인 (구현, eval 미사용)
-- Helsinki-NLP/opus-mt-ko-en + en-ko
-- 영문 eval 만 진행했으므로 enable_translation=False 로 미사용
-- 추후 한국어 demo 사용 시 활성화 가능
+### 5. Korean → English → Korean 번역 파이프라인 (m2m100, 라이브 demo 활성)
+- `facebook/m2m100_418M` (~1.7 GB) — KO↔EN 양방향 단일 multilingual 모델
+- 영문 eval (이 보고서) 에서는 `enable_translation=False` 로 비활성화 (시간/메모리 절약)
+- 라이브 HF Space 에서는 활성 — Playwright 7/7 + gradio_client 12/12 검증 완료
+  → `eval_results/live_vs_enhanced.md`, `eval_results/browser_screenshots/`
 
 ### 6. OOD gate (구현, 큰 영향 X)
 - CLIP similarity < 0.20 시 "I don't know" 답변
@@ -91,7 +92,8 @@
 - **VQAv2 절대치 36.67%** — 0.5B LLM 한계 (참고: LLaVA-1.5-7B 는 70%+)
 - **POPE F1 약간 하락 (-0.027)** — 정확도와 precision 은 올랐지만 recall trade-off
 - **VQAv2 enhanced 추가 이득 없음** — 대부분 질문이 open-ended (Why/Where/What kind) 라 CLIP 으로 도움 한계
-- **Korean evaluation 미수행** — 한국어 표준 VQA benchmark 부재 (KoLLaVA-Eval 같은 셋 미공개)
+- **Korean 정량 benchmark 미수행** — 한국어 표준 VQA benchmark 부재 (KoLLaVA-Eval 같은 셋 미공개).
+  대신 라이브 HF Space 에 한국어 4 케이스 + 영어 3 케이스 직접 호출 검증 (Playwright 7/7, 12-case head-to-head 11/12) — `eval_results/live_vs_enhanced.md` 참조
 
 ### 🔵 deployment 최적화 (성능과 무관, 별도 가치)
 - LoRA adapter: 1045 MB → 8.28 MB (출력 bit-identical)

@@ -1,12 +1,14 @@
-"""Mini-LLaVA Gradio 데모.
+"""Mini-LLaVA Gradio 데모 — 로컬 sanity-check 용 (raw v3 model 직접 실행).
+
+⚠️  v3-Enhanced wrapper (CLIP grounding + m2m100 + OOD) 가 포함된 production 데모는
+    `space/app.py` 를 참고. 이 파일은 raw model 출력만 보여주는 단순 launcher.
 
 사용:
-  python app.py                                  # 랜덤 init projector (파이프라인 시연용)
-  python app.py --checkpoint checkpoints/v1_baseline/projector.pt   # v1 baseline
   python app.py \\
-    --checkpoint checkpoints/v2_stage2_lora/projector.pt \\
-    --lora-adapter checkpoints/v2_stage2_lora/lora_adapter            # v2 (권장)
-  python app.py --share                          # 공개 링크 생성
+    --checkpoint checkpoints/v3_step1_korean/projector.pt \\
+    --lora-adapter checkpoints/v3_step1_korean/lora_adapter_slim       # v3 (권장)
+  python app.py --checkpoint checkpoints/v1_baseline/projector.pt      # v1 baseline 비교
+  python app.py --share                                                # 공개 링크 생성
 """
 from __future__ import annotations
 
@@ -29,8 +31,8 @@ HEADER_MD = """
 
 FOOTER_MD = """
 ---
-> 🛠️ Powered by `vlm-from-scratch` — LLaVA-1.5 구조 직접 구현 (projector + LoRA).
-> v2 (Stage 2 LoRA) 가중치 사용 시 한국어 / OOD 한계는 [GitHub README Test B/C](https://github.com/AD-Styles/vlm-from-scratch#-results) 참조.
+> 🛠️ Powered by `vlm-from-scratch-v3` — CLIP-ViT + Qwen2.5-0.5B + LoRA 직접 구현.
+> 이 launcher 는 raw model 출력 sanity-check 용. CLIP grounding / m2m100 한국어 응답 등이 통합된 production 데모는 [HF Space](https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo) 또는 `python space/app.py` 참조.
 """
 
 EXAMPLES = [
@@ -140,14 +142,14 @@ def parse_args():
     p.add_argument(
         "--checkpoint",
         type=str,
-        default="checkpoints/v2_stage2_lora/projector.pt",
-        help="학습된 projector 가중치 경로 (예: checkpoints/v1_baseline/projector.pt 또는 v2_stage2_lora)",
+        default="checkpoints/v3_step1_korean/projector.pt",
+        help="학습된 projector 가중치 경로 (예: checkpoints/v3_step1_korean/projector.pt)",
     )
     p.add_argument(
         "--lora-adapter",
         type=str,
-        default=None,
-        help="Stage 2 LoRA adapter 디렉터리 (선택). 예: checkpoints/v2_stage2_lora/lora_adapter",
+        default="checkpoints/v3_step1_korean/lora_adapter_slim",
+        help="Stage 2 LoRA adapter 디렉터리 (예: checkpoints/v3_step1_korean/lora_adapter_slim)",
     )
     p.add_argument("--server-name", type=str, default="0.0.0.0")
     p.add_argument("--server-port", type=int, default=7860)
