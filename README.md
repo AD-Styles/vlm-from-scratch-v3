@@ -39,22 +39,31 @@ python scripts/live_vs_enhanced.py
 
 > ✅ **MT 모델 선택 근거**: `scripts/_test_mt_models.py` 로 3개 후보 (Helsinki / m2m100 / NLLB) 정량 비교 후 `facebook/m2m100_418M` (1.7 GB) 채택 — 단일 모델로 KO↔EN 양방향 일관 처리.
 
+### 🖼️ 테스트 이미지 (12 케이스 입력)
+
+| `source_dog.jpg` (in-distribution) | `source_pikachu.png` (OOD: 만화) |
+|:---:|:---:|
+| <img src="assets/source_dog.jpg" width="220" alt="강아지 + 헬로키티 모자" /> | <img src="assets/source_pikachu.png" width="220" alt="피카츄 + 선장 모자" /> |
+| 영어 6 + 한국어 2 케이스 | 영어 3 + 한국어 1 케이스 |
+
+면접관 / 리뷰어가 이 이미지를 직접 [라이브 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo) 에 업로드해서 동일 결과 재현 가능.
+
 ### 12 케이스 head-to-head 결과 (`eval_results/live_vs_enhanced.md`)
 
-| # | 이미지 | 질문 | 기대 | baseline | **v3-Enhanced** |
+| # | 이미지 | 질문 | 기대 | v3 raw baseline | **v3-Enhanced** |
 |---|---|---|---|---|---|
-| 1 | dog | What is in this image? | dog | ❌ | **Dog** ✅ |
-| 2 | dog | Is there a dog? | yes | ✅ (우연) | **yes** ✅ |
-| 3 | dog | Is there a cat? | no | ❌ | **no** ✅ |
-| 4 | dog | Is there a person? | no | ❌ | **no** ✅ |
-| 5 | dog | Is there a car? | no | ❌ | **no** ✅ |
-| 6 | dog | What color of main subject? | white | ❌ | **white** ✅ |
-| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | ❌ | **개** ✅ |
-| 8 | dog | 이 동물의 종류는? | 개 | ❌ | **개** ✅ |
-| 9 | pikachu | What is in this image? | cartoon | ❌ | A picture of a (truncated) ❌ |
-| 10 | pikachu | Is there a real animal? | no | ❌ | **no** ✅ |
-| 11 | pikachu | What color is this character? | yellow | ❌ | **yellow** ✅ |
-| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | ❌ | **노란색** ✅ |
+| 1 | dog | What is in this image? | dog | Cat ❌ | **Dog** ✅ |
+| 2 | dog | Is there a dog? | yes | Yes ✅ (우연) | **yes** ✅ |
+| 3 | dog | Is there a cat? | no | Yes ❌ | **no** ✅ |
+| 4 | dog | Is there a person? | no | Yes ❌ | **no** ✅ |
+| 5 | dog | Is there a car? | no | Yes ❌ | **no** ✅ |
+| 6 | dog | What color of main subject? | white | Black ❌ | **white** ✅ |
+| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 소 ❌ | **개** ✅ |
+| 8 | dog | 이 동물의 종류는? | 개 | 야생동물 ❌ | **개** ✅ |
+| 9 | pikachu | What is in this image? | cartoon | Dog ❌ | A picture of a (truncated) ❌ |
+| 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ |
+| 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ |
+| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ |
 
 → 유일한 실패 (case 9) 는 0.5B LLM 의 cartoon 인식 한계 — v4 에서 LLM size up 으로 해결 예정.
 

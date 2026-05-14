@@ -34,20 +34,20 @@ print(answer[0])  # → "no"
 
 ### 📋 12 케이스 결과 표
 
-| # | 이미지 | 질문 | 기대 | baseline | v3-Enhanced | 라우팅 path |
+| # | 이미지 | 질문 | 기대 | v3 raw baseline | v3-Enhanced | 라우팅 path |
 |---|---|---|---|---|---|---|
-| 1 | dog | What is in this image? | dog | ❌ | **Dog** ✅ | vlm_raw |
-| 2 | dog | Is there a dog? | yes | ✅ (운) | **yes** ✅ | clip_grounding_yesno |
-| 3 | dog | Is there a cat? | no | ❌ | **no** ✅ | clip_grounding_yesno |
-| 4 | dog | Is there a person? | no | ❌ | **no** ✅ | clip_grounding_yesno |
-| 5 | dog | Is there a car? | no | ❌ | **no** ✅ | clip_grounding_yesno |
-| 6 | dog | What color is main subject? | white | ❌ | **white** ✅ | clip_color |
-| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
-| 8 | dog | 이 동물의 종류는? | 개 | ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
-| 9 | pikachu | What is in this image? | cartoon | ❌ | A picture of a (truncated) ❌ | vlm_raw |
-| 10 | pikachu | Is there a real animal? | no | ❌ | **no** ✅ | clip_grounding_yesno |
-| 11 | pikachu | What color is this character? | yellow | ❌ | **yellow** ✅ | clip_color |
-| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | ❌ | **노란색** ✅ | KO→EN MT + clip_color |
+| 1 | dog | What is in this image? | dog | Cat ❌ | **Dog** ✅ | vlm_raw |
+| 2 | dog | Is there a dog? | yes | Yes ✅ (운) | **yes** ✅ | clip_grounding_yesno |
+| 3 | dog | Is there a cat? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
+| 4 | dog | Is there a person? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
+| 5 | dog | Is there a car? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
+| 6 | dog | What color is main subject? | white | Black ❌ | **white** ✅ | clip_color |
+| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 소 ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
+| 8 | dog | 이 동물의 종류는? | 개 | 야생동물 ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
+| 9 | pikachu | What is in this image? | cartoon | Dog ❌ | A picture of a (truncated) ❌ | vlm_raw |
+| 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
+| 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ | clip_color |
+| 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ | KO→EN MT + clip_color |
 
 → **Enhanced 11/12 정답, 유일한 실패는 case 9 (pikachu OOD subject ID)**
 
