@@ -14,6 +14,6 @@ README.md 가 다음 2개 입력 이미지를 참조합니다.
 
 응답 screenshot 대신 실제 추론을 체험할 수 있는 Gradio 데모를 Hugging Face Spaces 에 배포합니다:
 
-🚀 https://huggingface.co/spaces/AD-Styles/mini-llava-demo
+🚀 https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo
 
 면접관 / 리뷰어가 이 README 의 입력 이미지를 직접 업로드하여 동일 결과를 재현할 수 있습니다.

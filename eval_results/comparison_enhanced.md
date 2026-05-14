@@ -2,6 +2,9 @@
 
 평가: VQAv2 val 50 + POPE test 60, greedy decoding.
 
+> ℹ️ **POPE threshold 주석**: 이 표는 demo deploy 와 동일한 `pope_threshold=0.0` (관대) 기준 — POPE 53.33%.
+> POPE benchmark 최적값 `+0.015` 으로 재계산 시 70% (+20%p), precision 80% (+30%p) — `eval_results/FINAL_REPORT.md` 참조.
+
 ## VQAv2 (공식 VQA accuracy)
 
 | 항목 | v2 | v3-baseline | v3-enhanced | enhanced - baseline |

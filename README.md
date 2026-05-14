@@ -74,7 +74,7 @@ python scripts/live_vs_enhanced.py
 
 → 영어 질문 → 영어 응답, 한국어 질문 → 한국어 응답. 면접관이 라이브 Space 에서 어느 언어로 질문해도 같은 언어로 답변 보장.
 
-### 표준 benchmark 수치 (`scripts/eval_proper.py`, `eval_results/comparison.md`)
+### 표준 benchmark 수치 (`scripts/eval_proper.py`, `eval_results/FINAL_REPORT.md`)
 
 VQAv2 val 50 + POPE 60, greedy decoding:
 
@@ -115,7 +115,7 @@ VQAv2 val 50 + POPE 60, greedy decoding:
 
 | | v2 | v3 |
 |---|---|---|
-| **학습 시간 합계** | 47분 | Step 1 (Korean): 175분 · Step 4 (slim 분석): 30분 (학습 0) |
+| **학습 시간 합계** | 47분 | Step 1 (Korean): 175분 · Step 4 (slim 분석): 30분 (학습 0) · *Step 2 ablation 199분은 미채택으로 제외* |
 | **사전 학습 가중치** | [AD-Styles/mini-llava-stage2](https://huggingface.co/AD-Styles/mini-llava-stage2) | 🤗 [AD-Styles/mini-llava-v3](https://huggingface.co/AD-Styles/mini-llava-v3) |
 | **🚀 Live Demo** | [v2 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-demo) | [v3 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo) |
 

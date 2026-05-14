@@ -4,14 +4,15 @@
   1. Output extraction        — VQA 단답 추출, yes/no 정규화, 따옴표/구두점 정리
   2. Constrained generation   — 질문 type 별 max_new 차등 (yesno=3, vqa=10, describe=64)
                                 + repetition_penalty (한국어 rambling 차단)
-  4. Ko→En→Ko 번역 파이프라인 — Helsinki-NLP MT 로 한국어를 영문 추론 라인 위에 매핑
-  6. OOD-gated abstention      — OODDetector 점수 > threshold 시 "모름" 응답 (hallucinate 대신)
-  7. CLIP zero-shot subject    — what/which 질문일 때 CLIP 이 직접 분류한 결과를 v3 응답과 cross-check
+  3. CLIP image-text grounding — POPE-style "is there X?" 질문 → CLIP 으로 직접 yes/no
+  4. Ko↔En 번역 파이프라인     — facebook/m2m100_418M 로 KO→EN 추론 → EN→KO 응답 (양방향 단일 모델)
+  5. CLIP zero-shot color/subject — color/what 질문일 때 CLIP 이 직접 분류
+  6. OOD-gated abstention       — OODDetector 점수 > threshold 시 "모름" 응답 (hallucinate 대신)
 
 설계 결정:
   - 모델 가중치는 절대 수정 X. 학습 0.
   - OODDetector 의 CLIP 모델을 재사용 (모델 1개로 OOD + 보조 분류 둘 다)
-  - 번역 모델 (KO→EN, EN→KO) 은 첫 사용 시 lazy load (~600 MB)
+  - 번역 모델 m2m100 (~1.7 GB) 은 첫 사용 시 lazy load — Space 에서는 app init 시 eager preload
 """
 from __future__ import annotations
 
