@@ -28,15 +28,23 @@ WEIGHT_REPO = "AD-Styles/mini-llava-v3"
 WEIGHT_LOCAL = "checkpoints/v3_step1_korean"
 
 DEMO_BANNER_MD = """
-# 🖼️ Mini-LLaVA — v3 Demo (Korean + Slim Adapter + OOD)
+# 🖼️ Mini-LLaVA — v3 Demo (Korean + OOD + Slim Deploy)
 
-> v2 의 3가지 한계를 정조준한 진화 버전. 모든 개선은 데이터로 검증.
+> **크기 ≠ 성능** — capability 추가 (Korean·OOD) 와 deployment 최적화 (Slim) 를 정직하게 분리.
 >
-> | 개선 | v2 | **v3 (이 데모)** |
+> ### 🟢 capability — 모델이 새로 할 수 있게 된 것
+> | 항목 | v2 | **v3 (이 데모)** |
 > |---|---|---|
-> | 다국어 | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** |
-> | LoRA adapter | 1045 MB | **8.28 MB (−99.21%)** |
-> | OOD 처리 | 무조건 답변 (hallucination) | **"모름" 가능** (CLIP+entropy) |
+> | 한국어 응답 | ❌ catastrophic forgetting | ✅ **영문 + 한국어** |
+> | OOD 신호 | ❌ 무조건 답변 | ✅ **"모름" 가능** (CLIP+entropy) |
+>
+> ### 🔵 deployment 최적화 — 성능 변화 0, 패키징만 효율화
+> | 항목 | v2 | v3 |
+> |---|---|---|
+> | LoRA adapter | 1045 MB | 8.28 MB · **출력 bit-identical** (greedy 7/7 검증) |
+>
+> ### 🟡 변하지 않은 것 (정직한 명시)
+> 0.5B LLM 의 이미지 이해 정확도 한계는 v2/v3 동일. v4 의 LLM size up 에서 정조준 예정.
 >
 > 📖 자세한 분석: **[GitHub README](https://github.com/AD-Styles/vlm-from-scratch-v3)**
 """

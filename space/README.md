@@ -17,14 +17,29 @@ short_description: VLM from scratch — v3 (KR + 8.28MB adapter + OOD detector)
 CLIP-ViT-B/32 + MLP Projector + Qwen2.5-0.5B (+ slim LoRA r=16) + OOD layer 로 직접 구현한 Vision-Language Model 의 데모 배포.
 HuggingFace 의 `LlavaForConditionalGeneration` 같은 고수준 추상화 미사용 — `<image>` 토큰 splice 와 융합 로직 직접 구현.
 
-## ✨ v3 의 3가지 검증된 개선 (vs v2 demo)
+## ✨ v3 의 변경 (capability 추가 2개 + deployment 최적화 1개)
 
-| 개선 | v2 demo | **v3 (이 데모)** |
+> **크기 ≠ 성능**: 아래 표를 capability 와 deployment 로 분리. Slim adapter 의 8.28 MB 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치 검증). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화.
+
+### 🟢 capability (모델이 새로 할 수 있게 된 것)
+
+| 항목 | v2 demo | **v3 (이 데모)** |
 |---|---|---|
-| 다국어 | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** (KoLLaVA 30.8% mix 학습) |
-| LoRA adapter 크기 | 1045 MB | **8.28 MB (−99.21%)** |
-| OOD 신호 | 무조건 답변 (hallucination) | **CLIP+entropy 기반 "모름" 가능** |
-| 다운로드 자산 총합 | ~1051 MB | **~14 MB** |
+| 한국어 응답 | ❌ catastrophic forgetting | ✅ **영문 + 한국어** (KoLLaVA 30.8% mix 학습) |
+| OOD 신호 | ❌ 무조건 답변 (hallucination) | ✅ **CLIP+entropy 기반 "모름" 가능** |
+
+### 🔵 deployment 최적화 (성능 변화 0, 배포 효율만)
+
+| 항목 | v2 demo | v3 |
+|---|---|---|
+| LoRA adapter 크기 | 1045 MB | 8.28 MB (−99.21%) |
+| 다운로드 자산 총합 | ~1051 MB | ~14 MB |
+| 모델 출력 변화 | (baseline) | **bit-identical** to FULL adapter |
+
+### 🟡 변하지 않은 것 (정직한 명시)
+
+- **이미지 이해 정확도**: 0.5B LLM 의 한계는 v2/v3 동일 (개를 다른 동물로 오인 등). 진짜 fix 는 v4 의 LLM size up 에서.
+- **영문 VQA head-to-head**: v2 vs v3 비교 미측정 (정직히 명시).
 
 ## 🛡️ OOD Detector — v3 신규 layer
 

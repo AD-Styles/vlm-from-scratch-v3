@@ -19,10 +19,12 @@ tags:
   - mini-llava
 ---
 
-# Mini-LLaVA v3 — Korean Multilingual + Slim LoRA + OOD Detection
+# Mini-LLaVA v3 — Korean Multilingual + OOD Detection + Slim Deploy
 
-> v2 의 미해결 과제 3가지 (한국어 forgetting, 1 GB adapter, OOD hallucination) 를 정조준한 진화 버전.
+> v2 baseline 위에 **capability 2개 (Korean·OOD) 추가 + deployment 1개 (Slim packaging) 최적화**.
 > CLIP-ViT-B/32 + MLP Projector + Qwen2.5-0.5B + LoRA(r=16) 를 직접 구현한 Vision-Language Model 의 학습 가중치.
+>
+> ⚠️ **크기 ≠ 성능 명시**: Slim adapter (8.28 MB) 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화. 진짜 capability 개선은 Korean / OOD 두 가지.
 
 ## 📦 이 레포의 구성 (~14 MB total)
 
@@ -78,14 +80,27 @@ detector = OODDetector(threshold=0.5, device="cpu")
 # generate 할 때 output_scores=True 로 first_logits 받아서 detector.score(image, first_logits) 호출
 ```
 
-## ✨ v2 → v3 핵심 개선
+## ✨ v2 → v3 변화 (capability vs deployment 분리)
+
+### 🟢 capability 추가 (모델이 새로 할 수 있게 된 것 — 진짜 성능 개선)
 
 | 항목 | v2 | **v3 (이 레포)** |
 |---|---|---|
 | 다국어 응답 | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** |
-| LoRA adapter | 1045 MB | **8.28 MB (−99.21%)** |
-| OOD 처리 | 무조건 답변 (hallucination) | **"잘 모르겠음" 가능** (CLIP+entropy) |
-| 다운로드 자산 총합 | ~1051 MB | **~14 MB** |
+| OOD 신호 | ❌ 무조건 답변 (hallucination) | ✅ **"잘 모르겠음" 가능** (CLIP+entropy) |
+
+### 🔵 deployment 최적화 (성능 변화 0, 배포 효율만)
+
+| 항목 | v2 | v3 |
+|---|---|---|
+| LoRA adapter | 1045 MB | 8.28 MB (−99.21%) |
+| 모델 자산 총합 | ~1051 MB | ~14 MB |
+| 모델 출력 | (baseline) | **bit-identical** to FULL (greedy 7/7 검증) |
+
+### 🟡 변하지 않은 것 (정직한 명시)
+
+- 이미지 이해 정확도 — 0.5B LLM 한계로 v2/v3 동일 수준 (v4 LLM size up 으로 해결 예정)
+- 영문 VQA head-to-head — v2 vs v3 비교는 미측정
 
 ## 🧠 학습 데이터 (Step 1, 175분)
 

@@ -1,19 +1,39 @@
-# Mini-LLaVA v3 (Korean Multilingual + Slim Adapter + OOD Detection)
+# Mini-LLaVA v3 (Korean Multilingual + OOD Detection + Slim Deploy)
 
-> [v2 vlm-from-scratch](https://github.com/AD-Styles/vlm-from-scratch) 의 미해결 과제 3가지를 정조준한 진화 버전. 모든 개선은 **데이터로 검증**, 모든 학습은 **사전 가설 검증 후만** 실행.
+> [v2 vlm-from-scratch](https://github.com/AD-Styles/vlm-from-scratch) 의 미해결 과제를 정조준. **성능 개선** 과 **deployment 최적화** 를 정직하게 분리해서 기술합니다.
 
-| | v2 baseline | **v3 (이 레포)** |
+### 🟢 진짜 capability 개선 (모델이 새로 할 수 있게 된 것)
+
+| | v2 | **v3** |
 |---|---|---|
-| **Backbone** | CLIP-ViT-B/32 + Qwen2.5-0.5B-Instruct | (동일 — Vision encoder up 시도는 ablation 결과 미채택) |
-| **다국어** | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** |
-| **LoRA adapter** | 1045 MB | **8.28 MB (−99.21%)** |
-| **OOD 처리** | 무조건 답변 (hallucination) | **"모름" 가능** (CLIP+entropy 신호 결합) |
-| **모델 자산 총합** | projector 6 MB + adapter 1045 MB ≈ 1051 MB | **projector 5.7 MB + adapter 8.28 MB ≈ 14 MB** |
-| **학습 시간 합계** | 47분 | Step 1 (Korean): 175분 · Step 4 (slim): **0분** (사전 분석으로 해결) |
+| **다국어 응답** | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** |
+| **OOD 신호** | ❌ 무조건 답변 (hallucination) | ✅ **"모름" 가능** (CLIP + LLM entropy) |
+
+### 🟡 동일하게 유지 (변하지 않은 것 — 정직한 명시)
+
+| | v2 | v3 |
+|---|---|---|
+| **Backbone** | CLIP-ViT-B/32 + Qwen2.5-0.5B-Instruct | (동일 — ViT-L/14 ablation 미채택) |
+| **이미지 이해 정확도** | 0.5B LLM 한계 | (동일 — 핵심 bottleneck 이며 v4 에서 LLM size up 으로 해결 예정) |
+| **영문 VQA 정확도** | (측정됨) | **head-to-head 미측정** — 정직히 명시 |
+
+### 🔵 Deployment 최적화 (성능 변화 0, 배포 효율만)
+
+| | v2 | v3 |
+|---|---|---|
+| **LoRA adapter 크기** | 1045 MB | 8.28 MB (−99.21%) |
+| **모델 자산 총합** | ≈ 1051 MB | **≈ 14 MB** |
+| **모델 출력** | (baseline) | **bit-identical** to FULL adapter (greedy 7/7 일치 검증) |
+
+> ⚠️ **중요 — 크기 ≠ 성능**: Slim adapter 는 **같은 모델, 같은 출력**. 단순히 PEFT 가 1GB 로 저장하던 것을 8MB 로 바꾼 것이지, 모델이 더 똑똑해진 것이 아닙니다. Deploy 시 다운로드 시간 / hosting cost 만 절감.
+
+| | v2 | v3 |
+|---|---|---|
+| **학습 시간 합계** | 47분 | Step 1 (Korean): 175분 · Step 4 (slim 분석): 30분 (학습 0) |
 | **사전 학습 가중치** | [AD-Styles/mini-llava-stage2](https://huggingface.co/AD-Styles/mini-llava-stage2) | 🤗 [AD-Styles/mini-llava-v3](https://huggingface.co/AD-Styles/mini-llava-v3) |
 | **🚀 Live Demo** | [v2 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-demo) | [v3 demo](https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo) |
 
-> 핵심 통찰: **"모든 문제가 학습으로 풀리는 건 아니다"** — Step 4 의 1GB 문제는 30분 분석으로 99.21% 해결 (3시간 retraining 절약).
+> 엔지니어링 통찰: **"학습으로 풀 문제 vs 분석으로 풀 문제 구분"** — Step 4 의 1GB 패키징 문제는 retraining 가설 (3시간 cost) 대신 30분 분석으로 해결. 단, 이는 **deployment 성과**이지 **모델 성능 성과**가 아님.
 
 ---
 
@@ -61,9 +81,13 @@
 
 ---
 
-## 🎯 v3 의 3가지 검증된 개선
+## 🎯 v3 의 변경 (capability 2 + deployment 최적화 1)
 
-### 1️⃣ 한국어 Catastrophic Forgetting 해소
+> **분류 원칙** (사용자 reminder 반영):
+> - **🟢 capability**: 모델이 새로 할 수 있게 된 것 — 진짜 성능 개선
+> - **🔵 deployment**: 모델은 같지만 배포가 효율화 — 성능 변화 0
+
+### 🟢 1️⃣ [capability] 한국어 Catastrophic Forgetting 해소
 
 #### 데이터 구성
 
@@ -106,7 +130,47 @@ python -m src.train \
 
 ---
 
-### 2️⃣ Slim Adapter — 1045 MB → 8.28 MB (재학습 0)
+### 🟢 2️⃣ [capability] OOD Detection (Out-Of-Distribution Awareness)
+
+#### 동기
+
+v2 는 학습 분포 밖 이미지 (만화, 추상화 등) 에도 무조건 답변 → hallucination. v3 는 신뢰도 평가 layer 추가.
+
+#### 설계 (`src/ood_detection.py: OODDetector`)
+
+두 신호의 가중 합:
+
+```
+ood_score = 0.6 × clip_signal + 0.4 × entropy_signal
+
+clip_signal:
+  - CLIP image-text similarity (57 in-dist 카테고리: 사람/개/차 등)
+  - similarity < 0.30 → clip_signal ↑ (in-dist 와 잘 안 맞음)
+
+entropy_signal:
+  - LLM 첫 토큰의 logits → softmax → entropy
+  - 8 nats 기준 정규화 (Qwen2.5 vocab 152K, ln(152K) ≈ 11.93 의 ~67%)
+  - entropy 높음 → LLM 도 자신 없음 → entropy_signal ↑
+
+is_ood = ood_score > 0.5  (default threshold)
+```
+
+#### 검증 (`scripts/test_ood_integration.py`)
+
+| 케이스 | clip_max_sim | clip_match (오인) | llm_entropy | ood_score | is_ood | 기대 | 판정 |
+|---|---|---|---|---|---|---|---|
+| In-Dist (실제 개) | 0.259 | 'a cat' | 3.99 | **0.365** | False | False | ✅ |
+| OOD (Pikachu, 카툰) | 0.232 | 'a boat' | 4.67 | **0.505** | True | True | ✅ |
+
+→ **2/2 정확 분류** (CLIP 이 dog→cat 오인하더라도 LLM entropy 와 가중치로 분리 가능).
+
+> Calibration set 부족 인정 — 현재 2 케이스만. v4 에선 더 다양한 OOD set (의료 이미지, 추상화, 손글씨 등) 으로 threshold 재조정 필요.
+
+---
+
+### 🔵 3️⃣ [deployment 최적화] Slim Adapter — 1045 MB → 8.28 MB (성능 변화 0)
+
+> ⚠️ **이 섹션은 모델 성능 개선이 아닙니다.** 같은 모델 / 같은 출력 / 단지 패키징만 효율화. 채용 담당자에게 "v3 가 v2 보다 똑똑해졌다" 의 근거가 **아닙니다** — "v3 를 더 가볍게 deploy 할 수 있다" 의 근거입니다. 핵심은 hosting cost / 다운로드 시간 절감.
 
 #### 문제 정의
 
@@ -145,7 +209,7 @@ slim adapter:
 
 추론 시 `src/model.py: load_lora_adapter()` 가 `image_token_row.safetensors` 자동 감지 + base Qwen2.5 의 마지막 row 만 patch (8 MB LoRA 와 함께 로드).
 
-#### 검증 — greedy decoding 7/7 비트 단위 일치
+#### 검증 — greedy decoding 7/7 비트 단위 일치 (= 모델 출력 무변화 입증)
 
 `scripts/verify_slim_adapter.py` 으로 deterministic 비교:
 
@@ -160,45 +224,7 @@ slim adapter:
 | 이 캐릭터의 색은? | "이 캐릭터의 색은 빨간색입니다..." | (정확히 동일) | ✅ |
 | **합계** | | | **7/7 (100%)** |
 
-→ **무손실 입증**, 1045 MB → 8.28 MB 안전 deploy.
-
----
-
-### 3️⃣ OOD Detection (Out-Of-Distribution Awareness)
-
-#### 동기
-
-v2 는 학습 분포 밖 이미지 (만화, 추상화 등) 에도 무조건 답변 → hallucination. v3 는 신뢰도 평가 layer 추가.
-
-#### 설계 (`src/ood_detection.py: OODDetector`)
-
-두 신호의 가중 합:
-
-```
-ood_score = 0.6 × clip_signal + 0.4 × entropy_signal
-
-clip_signal:
-  - CLIP image-text similarity (57 in-dist 카테고리: 사람/개/차 등)
-  - similarity < 0.30 → clip_signal ↑ (in-dist 와 잘 안 맞음)
-
-entropy_signal:
-  - LLM 첫 토큰의 logits → softmax → entropy
-  - 8 nats 기준 정규화 (Qwen2.5 vocab 152K, ln(152K) ≈ 11.93 의 ~67%)
-  - entropy 높음 → LLM 도 자신 없음 → entropy_signal ↑
-
-is_ood = ood_score > 0.5  (default threshold)
-```
-
-#### 검증 (`scripts/test_ood_integration.py`)
-
-| 케이스 | clip_max_sim | clip_match (오인) | llm_entropy | ood_score | is_ood | 기대 | 판정 |
-|---|---|---|---|---|---|---|---|
-| In-Dist (실제 개) | 0.259 | 'a cat' | 3.99 | **0.365** | False | False | ✅ |
-| OOD (Pikachu, 카툰) | 0.232 | 'a boat' | 4.67 | **0.505** | True | True | ✅ |
-
-→ **2/2 정확 분류** (CLIP 이 dog→cat 오인하더라도 LLM entropy 와 가중치로 분리 가능).
-
-> Calibration set 부족 인정 — 현재 2 케이스만. v4 에선 더 다양한 OOD set (의료 이미지, 추상화, 손글씨 등) 으로 threshold 재조정 필요.
+→ **무손실 입증** (= 모델 성능 변화 0 의 직접 증거). 1045 MB → 8.28 MB 안전 deploy.
 
 ---
 
@@ -314,7 +340,9 @@ v3 시작 전 원칙: **"학습 시간 낭비 0"**
 
 ---
 
-### Step 4 — Slim Adapter Breakthrough (사전 분석의 승리)
+### Step 4 — Slim Adapter (deployment 최적화, 모델 성능 변화 0)
+
+> **분류**: 이는 **engineering process 의 작은 승리**이지 **모델 성능 개선이 아닙니다**. 같은 모델이 같은 출력을 내며, 단지 패키징이 1045MB → 8.28MB 로 효율화. 채용 셀링 포인트로 사용 시 "deployment 최적화 사례" 로 정직하게 포지셔닝.
 
 **초기 가설 (3시간 cost):** "tied_embeddings 가 원인 → untie + 재학습"
 
@@ -326,9 +354,9 @@ v3 시작 전 원칙: **"학습 시간 낭비 0"**
 
 **해결:** `scripts/extract_lora_v3.py` 로 8.28 MB 추출 + `model.py.load_lora_adapter()` 가 마지막 row 자동 patch.
 
-**검증:** greedy 7/7 비트 단위 일치 → 무손실.
+**검증:** greedy 7/7 비트 단위 일치 → 무손실 (= 모델 출력 변화 0 의 직접 증거).
 
-**학습:** **"학습으로 풀 문제 vs 분석으로 풀 문제"** 구분의 중요성. 가설 → 즉시 학습 reflexes 의존하지 말 것. **30분 분석 = 3시간 학습 절약 + 더 깊은 이해**.
+**학습:** **"학습으로 풀 문제 vs 분석으로 풀 문제"** 구분의 중요성. 가설 → 즉시 학습 reflexes 의존하지 말 것. **30분 분석 = 3시간 학습 절약 + 더 깊은 이해**. (단, 이 깨달음은 deployment process 영역이지 모델 capability 영역이 아님.)
 
 ---
 
