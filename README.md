@@ -26,7 +26,8 @@ python scripts/browser_visit_space.py
 
 # Python API 로 직접 호출해서 라이브 응답이 로컬 응답과 일치하는지 비교
 python scripts/live_vs_enhanced.py
-# → 12/12 케이스에서 라이브 = 로컬 (배포 무결성 확인)
+# → 12/12 케이스 라이브 = 로컬 일치 (배포 무결성 확인)
+# → 정답은 11/12 — case 9 (pikachu) 는 0.5B LLM 한계로 라이브·로컬 양측 모두 오답
 ```
 
 웹에서 직접 써 보고 싶다면 → https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo
@@ -39,7 +40,7 @@ python scripts/live_vs_enhanced.py
 | 2 | **CLIP 으로 색상 분류** | "What color..." 패턴이면 12개 색상 단어와 이미지를 매칭해서 가장 가까운 색 응답 | 색상 질문 3/3 정답 |
 | 3 | **출력 후처리** | 모델 출력에서 단답만 추출, 따옴표 / 구두점 정리 | VQA 평가 metric 호환 |
 | 4 | **한국어 ↔ 영어 번역** | facebook/m2m100_418M 으로 한국어 질문을 영어로 번역해서 추론, 영어 답변을 다시 한국어로 번역 | 한국어 4/4 라이브 검증 |
-| 5 | **OOD 감지** | CLIP 으로 학습 분포와의 유사도가 낮으면 "잘 모르겠다" 로 응답 | 학습 분포 외 이미지에서 환각 차단 |
+| 5 | **OOD 감지** | CLIP 이미지 유사도 < 0.20 이면 "잘 모르겠다" 로 응답 (독립형 OODDetector 는 CLIP + LLM 엔트로피 가중 합 사용 — Step 3 참조) | 학습 분포 외 이미지에서 환각 차단 |
 
 > 번역 모델은 처음에 Helsinki-NLP/opus-mt-tc-big-en-ko 를 시도했는데 영→한 결과가 깨졌습니다. `scripts/_test_mt_models.py` 로 m2m100 / NLLB 까지 비교해보고 m2m100_418M (1.7 GB) 으로 정착했습니다.
 
@@ -89,7 +90,7 @@ python scripts/live_vs_enhanced.py
 
 ### 표준 benchmark 점수
 
-`scripts/eval_proper.py` 로 측정한 공개 데이터셋 점수입니다 (VQAv2 50 + POPE 60, greedy decoding).
+`scripts/eval_proper.py` (v2 · v3 baseline) 와 `scripts/eval_enhanced.py` (v3+wrapper) 로 측정한 공개 데이터셋 점수입니다 (VQAv2 50 + POPE 60, greedy decoding).
 
 | | v2 | v3 (모델만) | v3 + wrapper |
 |---|---|---|---|
@@ -101,6 +102,7 @@ python scripts/live_vs_enhanced.py
 > 베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준입니다. wrapper 의 +20%p 는 실제로 이미지를 보고 답한 결과입니다.
 
 자세한 분석은 [`eval_results/FINAL_REPORT.md`](eval_results/FINAL_REPORT.md) 참조.
+케이스별 라우팅 경로 (clip_grounding / clip_color / m2m100 등) 는 [`eval_results/FINAL_VERIFIED.md`](eval_results/FINAL_VERIFIED.md) 참조.
 
 ---
 
@@ -255,6 +257,8 @@ entropy_signal:
 
 is_ood = ood_score > 0.5  (기본 임계값)
 ```
+
+> **참고**: `src/enhanced_inference.py` 의 production wrapper 는 위 전체 수식 대신 **단순화된 게이트 (CLIP similarity < 0.20 → abstention)** 를 사용합니다. OODDetector 는 더 정밀한 standalone 모듈로, 독립 실행 또는 임계값 튜닝에 활용할 수 있습니다.
 
 ### 검증 (`scripts/test_ood_integration.py`)
 
