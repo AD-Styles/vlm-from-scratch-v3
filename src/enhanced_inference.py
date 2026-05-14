@@ -137,24 +137,24 @@ class EnhancedVLM:
         model: MiniLLaVA,
         ood_detector: OODDetector,
         ood_threshold: float = 0.55,
-        enable_translation: bool = True,
-        enable_back_translation: bool = False,  # NEW: Helsinki en-ko 가 망가져 있어 default False
+        enable_translation: bool = True,        # KO↔EN 양방향 (m2m100)
+        enable_back_translation: bool = True,   # EN→KO (m2m100 정상 작동)
         enable_clip_subject: bool = True,
         device: Optional[str] = None,
-        pope_threshold: float = 0.0,  # 0.015 (POPE bench) → 0.0 (demo 친화적)
+        pope_threshold: float = 0.0,
     ):
         self.model = model
         self.ood = ood_detector
         self.ood_threshold = ood_threshold
         self.pope_threshold = pope_threshold
         self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
-        self.enable_translation = enable_translation  # KO→EN translation
-        self.enable_back_translation = enable_back_translation  # EN→KO translation (broken)
+        self.enable_translation = enable_translation
+        self.enable_back_translation = enable_back_translation
         self.enable_clip_subject = enable_clip_subject
 
-        # MT 모델 lazy load
-        self._mt_ko_en = None
-        self._mt_en_ko = None
+        # MT 모델 lazy load — m2m100_418M (KO↔EN 양방향, 한 모델)
+        self._mt = None
+        self._mt_tok = None
         self._mt_loaded = False
 
         # CLIP 보조 분류용 텍스트 임베딩 사전 캐시
@@ -174,32 +174,34 @@ class EnhancedVLM:
         self._clip_class_emb = text_emb
 
     def _ensure_mt_loaded(self, need_back: bool = False):
+        """m2m100_418M 로 KO↔EN 양방향 — 한 모델로 충분 (~1.7 GB lazy)."""
         if self._mt_loaded:
             return
-        from transformers import MarianMTModel, MarianTokenizer
-        print("[enhanced] loading MT KO→EN (~300 MB) ...")
-        self._mt_ko_en_tok = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-ko-en")
-        self._mt_ko_en = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-ko-en").to(self.device).eval()
-        if need_back:
-            print("[enhanced] loading MT EN→KO (~300 MB) ...")
-            self._mt_en_ko_tok = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-tc-big-en-ko")
-            self._mt_en_ko = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-tc-big-en-ko").to(self.device).eval()
+        from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
+        print("[enhanced] loading m2m100_418M (~1.7 GB, KO↔EN 양방향) ...")
+        self._mt_tok = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M")
+        self._mt = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M").to(self.device).eval()
         self._mt_loaded = True
         print("[enhanced] MT loaded.")
 
     @torch.no_grad()
-    def _translate(self, text: str, model, tokenizer) -> str:
-        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=256).to(self.device)
-        out = model.generate(**inputs, max_new_tokens=128, num_beams=4)
-        return tokenizer.decode(out[0], skip_special_tokens=True).strip()
+    def _m2m_translate(self, text: str, src_lang: str, tgt_lang: str) -> str:
+        self._ensure_mt_loaded()
+        self._mt_tok.src_lang = src_lang
+        inputs = self._mt_tok(text, return_tensors="pt", padding=True, truncation=True, max_length=256).to(self.device)
+        out = self._mt.generate(
+            **inputs,
+            forced_bos_token_id=self._mt_tok.get_lang_id(tgt_lang),
+            max_new_tokens=128,
+            num_beams=4,
+        )
+        return self._mt_tok.decode(out[0], skip_special_tokens=True).strip()
 
     def translate_ko_to_en(self, text: str) -> str:
-        self._ensure_mt_loaded(need_back=False)
-        return self._translate(text, self._mt_ko_en, self._mt_ko_en_tok)
+        return self._m2m_translate(text, "ko", "en")
 
     def translate_en_to_ko(self, text: str) -> str:
-        self._ensure_mt_loaded(need_back=True)
-        return self._translate(text, self._mt_en_ko, self._mt_en_ko_tok)
+        return self._m2m_translate(text, "en", "ko")
 
     @torch.no_grad()
     def _clip_subject(self, image: Image.Image) -> tuple[str, float]:
@@ -331,12 +333,23 @@ class EnhancedVLM:
 
         # 4. ★★ POPE-style 'is there X?' → CLIP grounding 으로 직접 yes/no
         # (v3/v2 모두 무조건 'Yes' bias 가 있으므로 CLIP 으로 우회)
+        # 한국어 번역시 "in this image" 가 흔하므로 the|this|that 모두 매치
+        obj = None
+        _q = en_question.lower()
         m = re.match(
-            r"\s*(?:is|are)\s+there\s+(?:an?|the|any)\s+(.+?)\s+(?:in|on|at)\s+the\s+(?:image|picture|photo)",
-            en_question.lower(),
+            r"\s*(?:is|are)\s+there\s+(?:an?|the|any|some)\s+(.+?)\s+(?:in|on|at)\s+(?:the|this|that)\s+(?:image|picture|photo)",
+            _q,
         )
-        if m and self.enable_clip_subject:
+        if m:
             obj = m.group(1).strip().strip("?,. ")
+        else:
+            m = re.match(
+                r"\s*(?:is|are)\s+there\s+(?:some(?:one|body)|any(?:one|body))\s+(?:in|on|at)\s+(?:the|this|that)\s+(?:image|picture|photo)",
+                _q,
+            )
+            if m:
+                obj = "person"  # someone/anyone → person
+        if obj and self.enable_clip_subject:
             verdict, margin = self._clip_yesno_grounding(image, obj)
             meta["clip_grounding_obj"] = obj
             meta["clip_grounding_margin"] = margin
@@ -429,23 +442,18 @@ class EnhancedVLM:
         else:
             meta["ood_gated"] = False
 
-        # 11. 한국어 사용자 응답 처리
-        #     - back_translation 비활성 (default): 영어 답변에 "[영어 답변]" prefix
-        #       (Helsinki opus-mt-tc-big-en-ko 가 gibberish 생성 → 정확한 영어가 더 나음)
-        #     - back_translation 활성: KO 로 번역 시도
+        # 11. 한국어 사용자 응답 처리 — m2m100 으로 EN→KO 번역
         if ko and not meta.get("ood_gated", False):
             if self.enable_back_translation and self.enable_translation:
                 try:
                     final = self.translate_en_to_ko(extracted)
-                    if not final or len(final) < 2:
-                        # gibberish/empty → fallback EN
-                        final = f"[영어 답변] {extracted}"
+                    if not final or len(final) < 1:
+                        final = extracted  # fallback EN
                 except Exception as e:
                     print(f"[enhanced] EN→KO MT failed: {e}")
-                    final = f"[영어 답변] {extracted}"
+                    final = extracted
             else:
-                # back-translation 비활성 → 영어 답변 + 한국어 안내
-                final = f"[영어 답변] {extracted}"
+                final = extracted
         else:
             final = extracted
 

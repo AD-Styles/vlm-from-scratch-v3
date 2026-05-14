@@ -17,18 +17,42 @@
   },
   {
     "case": 3,
-    "image": "source_dog.jpg",
-    "question": "이 동물의 종류는 무엇인가요?",
-    "expected": "[영어 답변] dog",
-    "ui_response": "[영어 답변] dog",
-    "screenshot": "eval_results\\browser_screenshots\\03_case_3.png"
-  },
-  {
-    "case": 4,
     "image": "source_pikachu.png",
     "question": "What color is this character?",
     "expected": "yellow",
     "ui_response": "yellow",
+    "screenshot": "eval_results\\browser_screenshots\\03_case_3.png"
+  },
+  {
+    "case": 4,
+    "image": "source_dog.jpg",
+    "question": "이 동물의 종류는 무엇인가요?",
+    "expected": "개",
+    "ui_response": "개",
     "screenshot": "eval_results\\browser_screenshots\\04_case_4.png"
+  },
+  {
+    "case": 5,
+    "image": "source_dog.jpg",
+    "question": "이 이미지에 고양이가 있나요?",
+    "expected": "아니요",
+    "ui_response": "아니요.",
+    "screenshot": "eval_results\\browser_screenshots\\05_case_5.png"
+  },
+  {
+    "case": 6,
+    "image": "source_dog.jpg",
+    "question": "주요 피사체의 색상은 무엇인가요?",
+    "expected": "흰색",
+    "ui_response": "흰색",
+    "screenshot": "eval_results\\browser_screenshots\\06_case_6.png"
+  },
+  {
+    "case": 7,
+    "image": "source_pikachu.png",
+    "question": "이 캐릭터의 색은 무엇인가요?",
+    "expected": "노란색",
+    "ui_response": "노란색",
+    "screenshot": "eval_results\\browser_screenshots\\07_case_7.png"
   }
 ]

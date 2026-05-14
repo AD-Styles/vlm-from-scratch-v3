@@ -15,8 +15,8 @@
 | 4 | source_dog | Is there a person in the image? | no | no | no | clip_grounding_yesno |
 | 5 | source_dog | Is there a car in the image? | no | no | no | clip_grounding_yesno |
 | 6 | source_dog | What color is the main subject? | white | white | white | clip_color |
-| 7 | source_dog | 이 이미지에 무엇이 보이나요? | 개 | [영어 답변] In this image we can see a dog and the background is white. | [영어 답변] In this image we can see a dog and the background is white. | vlm_raw |
-| 8 | source_dog | 이 동물의 종류는 무엇인가요? | 개 | [영어 답변] dog | [영어 답변] dog | vlm_raw |
+| 7 | source_dog | 이 이미지에 무엇이 보이나요? | 개 | 이 그림에서 우리는 개를 볼 수 있으며 배경은 흰색입니다. | 이 그림에서 우리는 개를 볼 수 있으며 배경은 흰색입니다. | vlm_raw |
+| 8 | source_dog | 이 동물의 종류는 무엇인가요? | 개 | 개 | 개 | vlm_raw |
 | 9 | source_pikachu | What is in this image? | cartoon | A picture of a | A picture of a | vlm_raw |
 | 10 | source_pikachu | Is there a real animal in the image? | no | no | no | clip_grounding_yesno |
 | 11 | source_pikachu | What color is this character? | yellow | yellow | yellow | clip_color |

@@ -11,10 +11,15 @@ SPACE_URL = "https://ad-styles-mini-llava-v3-demo.hf.space"
 ASSETS = Path("assets").resolve()
 
 TEST_CASES = [
+    # English → English
     (str(ASSETS / "source_dog.jpg"), "Is there a cat in the image?", "no"),
     (str(ASSETS / "source_dog.jpg"), "What color is the main subject?", "white"),
-    (str(ASSETS / "source_dog.jpg"), "이 동물의 종류는 무엇인가요?", "[영어 답변] dog"),
     (str(ASSETS / "source_pikachu.png"), "What color is this character?", "yellow"),
+    # Korean → Korean (m2m100)
+    (str(ASSETS / "source_dog.jpg"), "이 동물의 종류는 무엇인가요?", "개"),
+    (str(ASSETS / "source_dog.jpg"), "이 이미지에 고양이가 있나요?", "아니요"),
+    (str(ASSETS / "source_dog.jpg"), "주요 피사체의 색상은 무엇인가요?", "흰색"),
+    (str(ASSETS / "source_pikachu.png"), "이 캐릭터의 색은 무엇인가요?", "노란색"),
 ]
 
 OUT_DIR = Path("eval_results/browser_screenshots")
@@ -63,8 +68,10 @@ def main():
                         if "응답" in txt or "Submit" in txt or "Run" in txt:
                             b.click()
                             break
-                print("    clicked submit, waiting 45s for inference ...")
-                time.sleep(45)
+                # m2m100 사전 로드됨 → 모든 inference 동일 시간
+                wait_s = 40
+                print(f"    clicked submit, waiting {wait_s}s for inference ...")
+                time.sleep(wait_s)
 
                 # 응답 textarea 들 모두 확인
                 tas = gradio_frame.locator('textarea').all()

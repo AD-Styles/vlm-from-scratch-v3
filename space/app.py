@@ -30,26 +30,12 @@ WEIGHT_REPO = "AD-Styles/mini-llava-v3"
 WEIGHT_LOCAL = "checkpoints/v3_step1_korean"
 
 DEMO_BANNER_MD = """
-# 🛡️ Mini-LLaVA — v3-Enhanced Demo
+# 🖼️ Mini-LLaVA v3
 
-> **재학습 0** — v3 모델 그대로에 inference-time 기법 5종 통합으로 raw baseline 대비 큰 폭 개선.
->
-> ### 🎯 실측 검증 (12 케이스 head-to-head)
-> | 방법 | 정답률 |
-> |---|---|
-> | v3 raw baseline (이전 demo) | 1 / 12 (8%) |
-> | **v3-Enhanced (이 demo)** | **11 / 12 (92%)** |
->
-> ### 추론 시 적용 기법
-> | # | 기법 | 효과 |
-> |---|---|---|
-> | 1 | CLIP image-text grounding | "Is there X?" 질문 yes-bias 우회 |
-> | 2 | CLIP color zero-shot | "What color?" 질문 직접 추론 |
-> | 3 | Output post-processing | 단답 추출, 따옴표/구두점 정리 |
-> | 4 | KO→EN translation (Helsinki-NLP) | 한국어 질문 → 영어 라인으로 정확 답변 |
-> | 5 | OOD detector | 학습 분포 밖 이미지 판정 |
->
-> 📖 자세한 분석 + benchmark 수치: **[GitHub README](https://github.com/AD-Styles/vlm-from-scratch-v3)**
+CLIP-ViT + Qwen2.5-0.5B + LoRA 로 직접 구현한 Vision-Language Model.
+영문 / 한국어 모두 지원, OOD 감지 포함.
+
+📖 [상세 분석 + benchmark](https://github.com/AD-Styles/vlm-from-scratch-v3)
 """
 
 FOOTER_MD = """
@@ -101,52 +87,37 @@ print("[init] Building EnhancedVLM wrapper ...")
 ENHANCED = EnhancedVLM(
     model=MODEL,
     ood_detector=DETECTOR,
-    enable_translation=True,        # KO→EN 활성 (lazy load)
-    enable_back_translation=False,  # EN→KO 비활성 (Helsinki tc-big-en-ko 가 깨짐)
-    enable_clip_subject=True,       # CLIP grounding + color
-    pope_threshold=0.0,             # demo 친화적 (case 2 dog 살림)
+    enable_translation=True,        # KO→EN 활성 (m2m100)
+    enable_back_translation=True,   # EN→KO 활성 (m2m100, 한국어 응답 복구)
+    enable_clip_subject=True,
+    pope_threshold=0.0,
     device="cpu",
 )
 print("[init] EnhancedVLM ready.")
 
+# ★★ Cold-start 회피: m2m100 (1.7 GB) 을 첫 사용자 요청 전에 미리 로드
+# 그렇지 않으면 첫 한국어 요청이 timeout 되어 silent fallback to English 발생
+print("[init] Pre-loading m2m100 (1.7 GB) — cold start prevention ...")
+try:
+    _ = ENHANCED.translate_ko_to_en("테스트")
+    _ = ENHANCED.translate_en_to_ko("test")
+    print("[init] m2m100 pre-loaded.")
+except Exception as e:
+    print(f"[init] WARN m2m100 preload failed: {e}")
+    print("[init] Will retry lazily on first Korean request.")
+
 
 def predict(image: Image.Image | None, question: str):
     if image is None:
-        return "⚠️ 이미지를 먼저 업로드해 주세요.", "", ""
+        return "⚠️ 이미지를 먼저 업로드해 주세요.", ""
     if not question or not question.strip():
-        return "⚠️ 질문을 입력해 주세요.", "", ""
+        return "⚠️ 질문을 입력해 주세요.", ""
 
     t0 = time.time()
-    final, meta = ENHANCED.answer(image, question.strip(), return_meta=True)
+    final, _meta = ENHANCED.answer(image, question.strip(), return_meta=True)
     elapsed = time.time() - t0
-
-    # 라우팅 + meta 정보 표시
-    md_lines = ["### 🛠️ Enhanced 라우팅 정보"]
-    md_lines.append(f"| 항목 | 값 |")
-    md_lines.append(f"|---|---|")
-    md_lines.append(f"| 적용된 path | `{meta.get('used_path', 'unknown')}` |")
-    md_lines.append(f"| 질문 type | `{meta.get('qtype', 'unknown')}` |")
-    md_lines.append(f"| 언어 | `{meta.get('lang', 'unknown')}` |")
-    if meta.get("translated_question"):
-        md_lines.append(f"| KO→EN 번역 | `{meta['translated_question']}` |")
-    if meta.get("clip_grounding_obj"):
-        md_lines.append(f"| CLIP grounding 대상 | `{meta['clip_grounding_obj']}` |")
-        md_lines.append(f"| CLIP margin | `{meta.get('clip_grounding_margin', 0):+.4f}` |")
-        md_lines.append(f"| CLIP 판정 | `{meta.get('clip_grounding_verdict')}` |")
-    if meta.get("clip_color"):
-        md_lines.append(f"| CLIP color | `{meta['clip_color']}` (sim={meta.get('clip_color_conf',0):.3f}) |")
-    if meta.get("clip_subject_label"):
-        md_lines.append(f"| CLIP subject | `{meta['clip_subject_label']}` (sim={meta.get('clip_subject_conf',0):.3f}, override={meta.get('clip_override')}) |")
-    if meta.get("clip_sim") is not None:
-        md_lines.append(f"| CLIP image-domain sim | `{meta['clip_sim']:.3f}` (best: '{meta.get('clip_match','?')}') |")
-    if meta.get("is_ood") is not None:
-        md_lines.append(f"| OOD 판정 | `{meta['is_ood']}` (gated: {meta.get('ood_gated', False)}) |")
-    if meta.get("raw_answer_en"):
-        md_lines.append(f"| raw v3 EN response | `{meta['raw_answer_en'][:100]}` |")
-    enhanced_md = "\n".join(md_lines)
-
-    meta_md = f"⏱️ {elapsed:.2f}s · v3-Enhanced (재학습 0, inference-time 기법 5종)"
-    return final, enhanced_md, meta_md
+    meta_md = f"⏱️ {elapsed:.2f}s"
+    return final, meta_md
 
 
 with gr.Blocks(title="Mini-LLaVA v3-Enhanced Demo") as demo:
@@ -165,11 +136,10 @@ with gr.Blocks(title="Mini-LLaVA v3-Enhanced Demo") as demo:
 
         with gr.Column(scale=1):
             answer_out = gr.Textbox(label="🤖 모델 응답", lines=6, interactive=False)
-            enhanced_md_out = gr.Markdown("")
             meta_out = gr.Markdown("")
 
-    submit_btn.click(fn=predict, inputs=[image_in, question_in], outputs=[answer_out, enhanced_md_out, meta_out])
-    question_in.submit(fn=predict, inputs=[image_in, question_in], outputs=[answer_out, enhanced_md_out, meta_out])
+    submit_btn.click(fn=predict, inputs=[image_in, question_in], outputs=[answer_out, meta_out])
+    question_in.submit(fn=predict, inputs=[image_in, question_in], outputs=[answer_out, meta_out])
 
     gr.Markdown(FOOTER_MD)
 

@@ -42,8 +42,8 @@ print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
 | 4 | dog | Is there a person? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
 | 5 | dog | Is there a car? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
 | 6 | dog | What color is main subject? | white | Black ❌ | **white** ✅ | clip_color |
-| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 흰색 소파에 앉아 있는 소 ❌ | **[영어 답변] dog and white background** ✅ | KO→EN MT + vlm_raw |
-| 8 | dog | 이 동물의 종류는? | 개 | 소가 야생동물 ❌ | **[영어 답변] dog** ✅ | KO→EN MT + vlm_raw |
+| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 흰색 소파에 앉아 있는 소 ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
+| 8 | dog | 이 동물의 종류는? | 개 | 소가 야생동물 ❌ | **개** ✅ | KO→EN→KO m2m100 + vlm_raw |
 | 9 | pikachu | What is in this image? | cartoon | A dog ❌ | A picture of a (truncated) ❌ | vlm_raw |
 | 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ | clip_grounding_yesno |
 | 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ | clip_color |
@@ -70,11 +70,12 @@ print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
 - 첫 sentence 추출, 따옴표/구두점 정리, yes/no 정규화
 - VQA accuracy metric 친화
 
-### 4. KO→EN translation pipeline
-- `Helsinki-NLP/opus-mt-ko-en` (~300 MB, lazy load)
-- KO 질문 → EN 으로 번역 → v3 EN 라인으로 정확 추론
-- EN→KO 역번역은 **`opus-mt-tc-big-en-ko` 가 gibberish 생성**해서 비활성 → "[영어 답변] ..." prefix 로 영어 그대로 반환
-- **케이스 7, 8 — 2/2 의미 있는 응답 (baseline 은 0/2 환각)**
+### 4. KO↔EN translation pipeline (m2m100)
+- `facebook/m2m100_418M` (~1.7 GB, eager preload at app init — cold start 회피)
+- KO 질문 → EN 으로 번역 → v3 EN 라인으로 정확 추론 → EN 답변 → KO 로 역번역
+- 단일 multilingual 모델로 양방향 일관 처리 (Helsinki opus-mt-tc-big-en-ko 는 gibberish 생성으로 폐기)
+- **케이스 7, 8 — 2/2 한국어 응답 ("개", baseline 은 0/2 환각)**
+- **라이브 UI 검증**: `scripts/browser_visit_space.py` 7/7 (영어 3 + 한국어 4 모두 같은 언어로 응답)
 
 ### 5. OOD detector
 - CLIP image similarity < 0.20 시 "잘 모르겠습니다" abstention
@@ -117,7 +118,7 @@ print(answer[0])  # → "no" (CLIP grounding, baseline 은 "Yes" 환각)
 2. **0.5B LLM 한계**: 이미지 이해의 근본 능력은 LLM 사이즈가 결정 (LLaVA-1.5-7B 는 VQAv2 70%+)
 3. **CLIP threshold 일반화**: pope_threshold 가 데이터셋별로 최적값 다름 (POPE 0.015 vs demo 0.0)
 4. **Korean 표준 benchmark 부재**: KoLLaVA-Eval 같은 공식 셋 미공개로 한국어 정량 평가 불가
-5. **Helsinki opus-mt-tc-big-en-ko 미사용**: gibberish 생성 → 영어 답변 그대로 반환 ("[영어 답변] ..." prefix)
+5. **m2m100 cold start ~30초 (1.7 GB)**: app init 단계에서 eager preload 로 회피. CPU-basic Space (16GB RAM) 에서 안정 동작 확인.
 
 ---
 

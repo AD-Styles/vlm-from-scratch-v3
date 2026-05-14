@@ -15,13 +15,14 @@
 
 **라이브 검증 가능** — 누구나 다음과 같이 직접 확인:
 ```bash
-# 실제 Chromium 브라우저로 라이브 Space 방문 + 4개 질문 입력 + 응답 확인 (자동화)
+# 실제 Chromium 브라우저로 라이브 Space 방문 + 7개 질문 입력 + 응답 확인 (자동화)
 python scripts/browser_visit_space.py
-# → 4/4 응답이 기대값과 일치 (스크린샷 5장 저장)
+# → 7/7 응답이 기대값과 일치 (영어 3 + 한국어 4, 스크린샷 8장 저장)
+#   특히 한국어 질문 → 한국어 응답 (m2m100 KO↔EN 양방향 번역)
 
 # 또는 Python 에서 API 직접 호출
 python scripts/live_vs_enhanced.py
-# → 12/12 응답이 로컬 enhanced wrapper 와 정확히 일치 (deploy 성공 입증)
+# → 응답이 로컬 enhanced wrapper 와 정확히 일치 (deploy 성공 입증)
 
 # 또는 https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo 직접 방문
 ```
@@ -33,10 +34,10 @@ python scripts/live_vs_enhanced.py
 | 1 | **CLIP image-text grounding** | "Is there X?" 패턴 매칭 → CLIP 으로 직접 yes/no | POPE-style 5/5 (vs baseline 1/5 yes-bias) |
 | 2 | **CLIP color zero-shot** | "What color..." 매칭 → CLIP 12색상 분류 | 색상 3/3 (vs baseline 0/3) |
 | 3 | **Output post-processing** | 단답 추출, 따옴표 정리, yes/no 정규화 | VQA accuracy metric 친화 |
-| 4 | **KO→EN translation pipeline** | Helsinki opus-mt-ko-en, 한국어 질문→영어 추론 | 한국어 2/3 (vs baseline 0/3 환각) |
+| 4 | **KO↔EN translation pipeline (m2m100)** | facebook/m2m100_418M, 한국어 질문 → 영어 추론 → 한국어 답변 | 한국어 4/4 라이브 검증 (vs baseline 0/3 환각) |
 | 5 | **OOD detector** | CLIP similarity < 0.20 시 abstention | 학습 분포 밖 hallucination 차단 |
 
-> ⚠️ EN→KO 역번역은 `Helsinki-NLP/opus-mt-tc-big-en-ko` 가 gibberish 생성 → 비활성. 한국어 질문엔 `[영어 답변] ...` prefix 로 영어 그대로 반환 (의미 전달 정확함).
+> ✅ **MT 모델 선택 사유**: 처음에는 `Helsinki-NLP/opus-mt-tc-big-en-ko` 를 시도했으나 EN→KO 가 gibberish ("Un popNetwork universal Greece Kin China") 생성. `scripts/_test_mt_models.py` 로 3개 후보를 정량 비교 후 `facebook/m2m100_418M` (1.7 GB) 채택 — 단일 모델로 KO↔EN 양방향 일관 처리.
 
 ### 12 케이스 head-to-head 결과 (`eval_results/live_vs_enhanced.md`)
 
@@ -48,14 +49,30 @@ python scripts/live_vs_enhanced.py
 | 4 | dog | Is there a person? | no | Yes ❌ | **no** ✅ |
 | 5 | dog | Is there a car? | no | Yes ❌ | **no** ✅ |
 | 6 | dog | What color of main subject? | white | Black ❌ | **white** ✅ |
-| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 흰색 소파에 앉아 있는 소 ❌ | **[영어 답변] dog and white background** ✅ |
-| 8 | dog | 이 동물의 종류는? | 개 | 소가 야생동물 ❌ | **[영어 답변] dog** ✅ |
+| 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 흰색 소파에 앉아 있는 소 ❌ | **개** ✅ (m2m100 KO→EN→KO) |
+| 8 | dog | 이 동물의 종류는? | 개 | 소가 야생동물 ❌ | **개** ✅ (m2m100 KO→EN→KO) |
 | 9 | pikachu | What is in this image? | cartoon | A dog ❌ | A picture of a (truncated) ❌ |
 | 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ |
 | 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ |
 | 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ |
 
 → 유일한 실패 (case 9) 는 0.5B LLM 의 cartoon 인식 한계 — v4 에서 LLM size up 으로 해결 예정.
+
+### 🎬 라이브 UI 검증 (Playwright Chromium, 7/7)
+
+`scripts/browser_visit_space.py` — 실제 Chromium 브라우저로 https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo 방문 → 이미지 업로드 + 질문 입력 + 응답 확인 자동화. 스크린샷 8장 (`eval_results/browser_screenshots/`).
+
+| # | 이미지 | 질문 | 기대 | UI 응답 | 결과 |
+|---|---|---|---|---|---|
+| 1 | dog | Is there a cat in the image? | no | **no** | ✅ |
+| 2 | dog | What color is the main subject? | white | **white** | ✅ |
+| 3 | pikachu | What color is this character? | yellow | **yellow** | ✅ |
+| 4 | dog | 이 동물의 종류는 무엇인가요? | 개 | **개** | ✅ |
+| 5 | dog | 이 이미지에 고양이가 있나요? | 아니요 | **아니요.** | ✅ |
+| 6 | dog | 주요 피사체의 색상은 무엇인가요? | 흰색 | **흰색** | ✅ |
+| 7 | pikachu | 이 캐릭터의 색은 무엇인가요? | 노란색 | **노란색** | ✅ |
+
+→ 영어 질문 → 영어 응답, 한국어 질문 → 한국어 응답. 면접관이 라이브 Space 에서 어느 언어로 질문해도 같은 언어로 답변 보장.
 
 ### 표준 benchmark 수치 (`scripts/eval_proper.py`, `eval_results/comparison.md`)
 

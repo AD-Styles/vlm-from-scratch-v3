@@ -81,8 +81,8 @@ def main():
     enhanced = EnhancedVLM(
         model=model,
         ood_detector=detector,
-        enable_translation=True,        # KO→EN 활성 (정상 동작)
-        enable_back_translation=False,  # EN→KO 비활성 (Helsinki en-ko 가 깨진 결과 생성)
+        enable_translation=True,        # KO→EN 활성 (m2m100)
+        enable_back_translation=True,   # EN→KO 활성 (m2m100, 한국어 응답 복구) — Space 와 동일
         enable_clip_subject=True,
         device=device,
         pope_threshold=0.0,             # case 2 dog 살리기 위해 0.0 (margin > 0 → yes)
