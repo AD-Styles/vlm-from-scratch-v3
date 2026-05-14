@@ -1,0 +1,34 @@
+[
+  {
+    "case": 1,
+    "image": "source_dog.jpg",
+    "question": "Is there a cat in the image?",
+    "expected": "no",
+    "ui_response": "no",
+    "screenshot": "eval_results\\browser_screenshots\\01_case_1.png"
+  },
+  {
+    "case": 2,
+    "image": "source_dog.jpg",
+    "question": "What color is the main subject?",
+    "expected": "white",
+    "ui_response": "white",
+    "screenshot": "eval_results\\browser_screenshots\\02_case_2.png"
+  },
+  {
+    "case": 3,
+    "image": "source_dog.jpg",
+    "question": "이 동물의 종류는 무엇인가요?",
+    "expected": "[영어 답변] dog",
+    "ui_response": "[영어 답변] dog",
+    "screenshot": "eval_results\\browser_screenshots\\03_case_3.png"
+  },
+  {
+    "case": 4,
+    "image": "source_pikachu.png",
+    "question": "What color is this character?",
+    "expected": "yellow",
+    "ui_response": "yellow",
+    "screenshot": "eval_results\\browser_screenshots\\04_case_4.png"
+  }
+]

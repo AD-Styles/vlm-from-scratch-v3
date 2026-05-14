@@ -1,0 +1,1571 @@
+{
+  "summary": {
+    "label": "v2",
+    "n_vqav2": 50,
+    "n_pope": 60,
+    "vqav2_accuracy": 0.3466666666666666,
+    "vqav2_by_type": {
+      "other": 0.2807017543859649,
+      "yes/no": 0.5454545454545454,
+      "number": 0.0
+    },
+    "pope_accuracy": 0.5,
+    "pope_yes_recall": 1.0,
+    "pope_yes_precision": 0.5,
+    "pope_yes_f1": 0.6666666666666666,
+    "pope_refusal_rate": 0.0,
+    "pope_by_category": {
+      "adversarial": 0.5
+    },
+    "pope_confusion": {
+      "tp": 30,
+      "fp": 30,
+      "tn": 0,
+      "fn": 0
+    }
+  },
+  "vqav2_details": [
+    {
+      "question_id": 262148000,
+      "question": "Where is he looking?",
+      "answer_type": "other",
+      "mc_answer": "down",
+      "all_answers": [
+        "down",
+        "down",
+        "at table",
+        "skateboard",
+        "down",
+        "table",
+        "down",
+        "down",
+        "down",
+        "down"
+      ],
+      "pred": "Right.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262148001,
+      "question": "What are the people in the background doing?",
+      "answer_type": "other",
+      "mc_answer": "watching",
+      "all_answers": [
+        "spectating",
+        "watching",
+        "watching",
+        "watching",
+        "watching",
+        "watching",
+        "watching",
+        "watching",
+        "watching",
+        "watching"
+      ],
+      "pred": "Sitting.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262148002,
+      "question": "What is he on top of?",
+      "answer_type": "other",
+      "mc_answer": "picnic table",
+      "all_answers": [
+        "table",
+        "table",
+        "table",
+        "picnic table",
+        "picnic table",
+        "picnic table",
+        "picnic table",
+        "picnic table",
+        "skateboard",
+        "picnic table"
+      ],
+      "pred": "Tower.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 393225000,
+      "question": "What website copyrighted the picture?",
+      "answer_type": "other",
+      "mc_answer": "foodiebakercom",
+      "all_answers": [
+        "foodiebakercom",
+        "foodiebakercom",
+        "foodiebaker",
+        "foodiebakercom",
+        "foodiebakercom",
+        "http://foodiebakercom",
+        "foodiebakercom",
+        "foodiebakercom",
+        "foodiebakercom",
+        "foodiebaker"
+      ],
+      "pred": "Instagram.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 393225001,
+      "question": "Is this a creamy soup?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 393225002,
+      "question": "Is this rice noodle soup?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 393225003,
+      "question": "What is to the right of the soup?",
+      "answer_type": "other",
+      "mc_answer": "chopsticks",
+      "all_answers": [
+        "chopsticks",
+        "chopsticks",
+        "chopsticks",
+        "chopsticks",
+        "chopsticks",
+        "shrimp",
+        "chopsticks",
+        "chopsticks",
+        "chopsticks",
+        "chopsticks spoon"
+      ],
+      "pred": "Plate.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 393226000,
+      "question": "What is the man doing in the street?",
+      "answer_type": "other",
+      "mc_answer": "walking",
+      "all_answers": [
+        "crossing it",
+        "walking",
+        "walking",
+        "crossing",
+        "crossing road",
+        "walking",
+        "crossing",
+        "walking",
+        "crossing",
+        "walking"
+      ],
+      "pred": "Walking.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 393226001,
+      "question": "How many photo's can you see?",
+      "answer_type": "number",
+      "mc_answer": "1",
+      "all_answers": [
+        "1",
+        "1",
+        "4",
+        "4",
+        "4",
+        "1",
+        "1",
+        "4",
+        "1",
+        "1"
+      ],
+      "pred": "Many.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 393226002,
+      "question": "What does the truck on the left sell?",
+      "answer_type": "other",
+      "mc_answer": "ice cream",
+      "all_answers": [
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream",
+        "ice cream"
+      ],
+      "pred": "Books.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 240301000,
+      "question": "Why is there a gap between the roof and wall?",
+      "answer_type": "other",
+      "mc_answer": "yes",
+      "all_answers": [
+        "ventilation",
+        "provide air",
+        "to air out barn from stinky bovines",
+        "keep cow safe",
+        "airflow",
+        "to let sunlight in",
+        "yes",
+        "yes",
+        "for air",
+        "air"
+      ],
+      "pred": "To allow the animals to move freely.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 240301001,
+      "question": "Is it daylight in this picture?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 240301002,
+      "question": "Why is the cow laying down?",
+      "answer_type": "other",
+      "mc_answer": "tired",
+      "all_answers": [
+        "tired",
+        "tired",
+        "4",
+        "resting",
+        "tired",
+        "tired",
+        "resting",
+        "tired",
+        "it's tired",
+        "tired"
+      ],
+      "pred": "To rest.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 131089000,
+      "question": "What color is the grass in this picture?",
+      "answer_type": "other",
+      "mc_answer": "green",
+      "all_answers": [
+        "gray",
+        "green",
+        "green",
+        "black, white",
+        "green",
+        "gray",
+        "green",
+        "brown",
+        "gray",
+        "green"
+      ],
+      "pred": "Green.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 131089001,
+      "question": "Did the batter hit the ball?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "no",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 131089002,
+      "question": "How many are playing ball?",
+      "answer_type": "number",
+      "mc_answer": "1",
+      "all_answers": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "boy"
+      ],
+      "pred": "Two.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 131089003,
+      "question": "Is there a chain link fence in the image?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 131089004,
+      "question": "Is the boy playing baseball?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162000,
+      "question": "Is that a folding chair?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162001,
+      "question": "How many beds?",
+      "answer_type": "number",
+      "mc_answer": "1",
+      "all_answers": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "10",
+        "1",
+        "1",
+        "1"
+      ],
+      "pred": "One.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162002,
+      "question": "What color is the bedspread?",
+      "answer_type": "other",
+      "mc_answer": "white",
+      "all_answers": [
+        "beige",
+        "white",
+        "pink",
+        "white",
+        "white",
+        "white",
+        "yellow",
+        "yellow",
+        "beige",
+        "yellow"
+      ],
+      "pred": "White.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162003,
+      "question": "How many pictures are there?",
+      "answer_type": "number",
+      "mc_answer": "7",
+      "all_answers": [
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7"
+      ],
+      "pred": "1.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162004,
+      "question": "Are these twin mattresses?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no, it is queen",
+        "no",
+        "no",
+        "yes",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.3333333333333333
+    },
+    {
+      "question_id": 262162005,
+      "question": "How many sources of light are there?",
+      "answer_type": "number",
+      "mc_answer": "1",
+      "all_answers": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "2",
+        "1",
+        "1",
+        "1",
+        "1",
+        "2"
+      ],
+      "pred": "One.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162006,
+      "question": "Is this room decorated for the 1970s?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "yes",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.3333333333333333
+    },
+    {
+      "question_id": 262162007,
+      "question": "Are the lights on in this room?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162008,
+      "question": "Are the windows big?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "no",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162009,
+      "question": "What is the chair made of?",
+      "answer_type": "other",
+      "mc_answer": "leather",
+      "all_answers": [
+        "leather",
+        "leather",
+        "plastic",
+        "plastic, vinyl, metal",
+        "leather",
+        "leather",
+        "leather",
+        "leather",
+        "leather",
+        "leather"
+      ],
+      "pred": "Wood.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162010,
+      "question": "Is this room in someone's home?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162011,
+      "question": "Which room is this?",
+      "answer_type": "other",
+      "mc_answer": "bedroom",
+      "all_answers": [
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom"
+      ],
+      "pred": "Kitchen.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162012,
+      "question": "Is the bed white?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "no",
+        "yes",
+        "no",
+        "no",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162013,
+      "question": "Could this be a hotel room?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "yes",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.3333333333333333
+    },
+    {
+      "question_id": 262162014,
+      "question": "Is the bed made?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "no",
+        "yes",
+        "yes",
+        "yes",
+        "yes, just one",
+        "yes",
+        "yes",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162015,
+      "question": "Are there bed headboards present in the photo?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162016,
+      "question": "Is there a mirror in the room?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162017,
+      "question": "What kind of room is this?",
+      "answer_type": "other",
+      "mc_answer": "bedroom",
+      "all_answers": [
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom",
+        "bedroom"
+      ],
+      "pred": "Bedroom.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162018,
+      "question": "How many chairs are in the photo?",
+      "answer_type": "number",
+      "mc_answer": "1",
+      "all_answers": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1"
+      ],
+      "pred": "One.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162019,
+      "question": "Is the desk cluttered?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162020,
+      "question": "Has the bed been made?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "no",
+        "no",
+        "yes",
+        "yes",
+        "yes",
+        "no",
+        "no",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162021,
+      "question": "How many seats are there?",
+      "answer_type": "number",
+      "mc_answer": "1",
+      "all_answers": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1",
+        "1"
+      ],
+      "pred": "One.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162022,
+      "question": "How many frames are on the wall?",
+      "answer_type": "number",
+      "mc_answer": "7",
+      "all_answers": [
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7"
+      ],
+      "pred": "10.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162023,
+      "question": "What color are the walls?",
+      "answer_type": "other",
+      "mc_answer": "white",
+      "all_answers": [
+        "white",
+        "off white",
+        "off white",
+        "white",
+        "white",
+        "beige",
+        "white",
+        "white",
+        "white",
+        "white"
+      ],
+      "pred": "White.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162024,
+      "question": "Are there any boxes in the room?",
+      "answer_type": "yes/no",
+      "mc_answer": "no",
+      "all_answers": [
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no",
+        "no"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162025,
+      "question": "Could this be a multi-purpose room?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 262162026,
+      "question": "What animal print does that chair resemble?",
+      "answer_type": "other",
+      "mc_answer": "none",
+      "all_answers": [
+        "panther",
+        "none",
+        "leather",
+        "dog",
+        "cat",
+        "none",
+        "none",
+        "none",
+        "none",
+        "dog"
+      ],
+      "pred": "Cat.",
+      "vqa_acc": 0.3333333333333333
+    },
+    {
+      "question_id": 262162027,
+      "question": "What is behind the foot of the bed?",
+      "answer_type": "other",
+      "mc_answer": "chair",
+      "all_answers": [
+        "chair",
+        "chair",
+        "chair",
+        "wall",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair"
+      ],
+      "pred": "Bed.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162028,
+      "question": "What is the size of the bed?",
+      "answer_type": "other",
+      "mc_answer": "queen",
+      "all_answers": [
+        "queen",
+        "queen",
+        "queen",
+        "queen sized",
+        "full",
+        "queen",
+        "queen",
+        "double",
+        "king",
+        "queen"
+      ],
+      "pred": "Medium.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 262162029,
+      "question": "How many pictures on the wall?",
+      "answer_type": "number",
+      "mc_answer": "7",
+      "all_answers": [
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "7",
+        "6",
+        "7"
+      ],
+      "pred": "1.",
+      "vqa_acc": 0.0
+    },
+    {
+      "question_id": 393243000,
+      "question": "Will this kid leave the powdered sugar on his face?",
+      "answer_type": "yes/no",
+      "mc_answer": "yes",
+      "all_answers": [
+        "yes",
+        "no",
+        "yes",
+        "no",
+        "yes",
+        "yes",
+        "no",
+        "yes",
+        "yes",
+        "yes"
+      ],
+      "pred": "Yes.",
+      "vqa_acc": 1.0
+    },
+    {
+      "question_id": 393243001,
+      "question": "What is the child eating?",
+      "answer_type": "other",
+      "mc_answer": "donut",
+      "all_answers": [
+        "donut",
+        "donut",
+        "donut",
+        "doughnut",
+        "donut",
+        "donut",
+        "donut",
+        "donut hole",
+        "donut",
+        "donut"
+      ],
+      "pred": "Sandwich.",
+      "vqa_acc": 0.0
+    }
+  ],
+  "pope_details": [
+    {
+      "id": "0",
+      "question": "Is there a snowboard in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "1",
+      "question": "Is there a backpack in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "2",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "3",
+      "question": "Is there a car in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "4",
+      "question": "Is there a skis in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "5",
+      "question": "Is there a dog in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "6",
+      "question": "Is there a truck in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "7",
+      "question": "Is there a car in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "8",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "9",
+      "question": "Is there a dining table in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "10",
+      "question": "Is there an umbrella in the imange?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "11",
+      "question": "Is there a handbag in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "12",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "13",
+      "question": "Is there a dining table in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "14",
+      "question": "Is there a bicycle in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "15",
+      "question": "Is there a motorcycle in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "16",
+      "question": "Is there a car in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "17",
+      "question": "Is there a truck in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "18",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "19",
+      "question": "Is there a dining table in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "20",
+      "question": "Is there a potted plant in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "21",
+      "question": "Is there a vase in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "22",
+      "question": "Is there a car in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "23",
+      "question": "Is there a truck in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "24",
+      "question": "Is there a traffic light in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "25",
+      "question": "Is there a bus in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "26",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "27",
+      "question": "Is there a dining table in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "28",
+      "question": "Is there a car in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "29",
+      "question": "Is there a truck in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "30",
+      "question": "Is there a dog in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "31",
+      "question": "Is there a person in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "32",
+      "question": "Is there a dining table in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "33",
+      "question": "Is there a chair in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "34",
+      "question": "Is there a bed in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "35",
+      "question": "Is there a book in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "36",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "37",
+      "question": "Is there a car in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "38",
+      "question": "Is there a spoon in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "39",
+      "question": "Is there a cup in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "40",
+      "question": "Is there a fork in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "41",
+      "question": "Is there a dining table in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "42",
+      "question": "Is there a tv in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "43",
+      "question": "Is there a person in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "44",
+      "question": "Is there a toaster in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "45",
+      "question": "Is there a book in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "46",
+      "question": "Is there a microwave in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "47",
+      "question": "Is there a bottle in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "48",
+      "question": "Is there a backpack in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "49",
+      "question": "Is there a handbag in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "50",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "51",
+      "question": "Is there a car in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "52",
+      "question": "Is there a skis in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "53",
+      "question": "Is there a snowboard in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "54",
+      "question": "Is there a bird in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "55",
+      "question": "Is there a handbag in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "56",
+      "question": "Is there a person in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "57",
+      "question": "Is there a car in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    },
+    {
+      "id": "58",
+      "question": "Is there a boat in the image?",
+      "gt_answer": "yes",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": true
+    },
+    {
+      "id": "59",
+      "question": "Is there a chair in the image?",
+      "gt_answer": "no",
+      "category": "adversarial",
+      "pred": "Yes.",
+      "pred_yn": "yes",
+      "correct": false
+    }
+  ]
+}
