@@ -272,10 +272,44 @@ class MiniLLaVA(nn.Module):
         self.projector.load_state_dict(state)
 
     def load_lora_adapter(self, adapter_path: str) -> None:
-        """학습된 LoRA adapter를 frozen LLM 위에 부착."""
+        """학습된 LoRA adapter를 frozen LLM 위에 부착.
+
+        v3 slim adapter 지원: adapter 디렉터리에 image_token_row.safetensors 가
+        있으면 PEFT 로 LoRA 만 로드 후 마지막 row (`<image>` 토큰의 학습된
+        representation) 를 수동 패치. 1GB → 8MB 절감 (품질 손실 0).
+        """
+        from pathlib import Path
+
         from peft import PeftModel
 
         self.llm = PeftModel.from_pretrained(self.llm, adapter_path)
+
+        # slim adapter 지원: image token row 가 별도 파일로 저장된 경우 패치
+        image_row_path = Path(adapter_path) / "image_token_row.safetensors"
+        if image_row_path.exists():
+            from safetensors import safe_open
+
+            with safe_open(str(image_row_path), framework="pt") as f:
+                for key in f.keys():
+                    row = f.get_tensor(key)
+                    # 키 형식: "image_token.embed_tokens" or "image_token.lm_head"
+                    module_name = key.rsplit(".", 1)[-1]
+                    if module_name == "embed_tokens":
+                        target = self.llm.get_input_embeddings()
+                    elif module_name == "lm_head":
+                        target = self.llm.get_output_embeddings()
+                    else:
+                        print(f"[slim] 알 수 없는 image_token 키: {key} — skip")
+                        continue
+                    if target is None:
+                        continue
+                    # dtype/device 일치시켜 마지막 row (= <image> 토큰) 패치
+                    with torch.no_grad():
+                        target.weight[-1] = row.to(
+                            dtype=target.weight.dtype, device=target.weight.device
+                        )
+                    print(f"[slim] {module_name}.weight[-1] 패치 완료 ({key})")
+
         self.llm.eval()
 
     def trainable_parameters(self):

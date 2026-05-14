@@ -137,7 +137,10 @@ class OODDetector:
             text_inputs = self.processor(
                 text=self.categories, return_tensors="pt", padding=True
             ).to(self.device)
-            text_emb = self.clip.get_text_features(**text_inputs)
+            text_result = self.clip.get_text_features(**text_inputs)
+            # transformers 5.x 호환: BaseModelOutputWithPooling 반환 → .pooler_output
+            # transformers 4.x 호환: Tensor 직접 반환
+            text_emb = text_result.pooler_output if hasattr(text_result, "pooler_output") else text_result
             text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True)
         self.text_embeddings = text_emb  # [n_categories, D]
 
@@ -153,7 +156,8 @@ class OODDetector:
             image = image.convert("RGB")
 
         img_inputs = self.processor(images=image, return_tensors="pt").to(self.device)
-        img_emb = self.clip.get_image_features(**img_inputs)
+        img_result = self.clip.get_image_features(**img_inputs)
+        img_emb = img_result.pooler_output if hasattr(img_result, "pooler_output") else img_result
         img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
 
         sims = (img_emb @ self.text_embeddings.T).squeeze(0)  # [n_categories]
