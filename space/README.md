@@ -54,15 +54,13 @@ is_ood = ood_score > threshold (default 0.5)
 
 검증 (`scripts/test_ood_integration.py`): In-Dist (실제 개) → ood_score 0.365 (OK ✅) · OOD (Pikachu 카툰) → ood_score 0.505 (OOD ⚠️)
 
-## 🪶 Slim Adapter — 1045 MB → 8.28 MB (PEFT default 우회)
+## 🪶 Slim Adapter — 1045 MB → 8.28 MB
 
 PEFT 표준은 `modules_to_save` (embed_tokens + lm_head) 을 통째로 저장 → 1 GB.
 사전 분석으로 발견: 학습된 부분은 `<image>` 토큰 1 row 뿐 (151,665/151,666 행은 base Qwen2.5 와 100% 일치).
 
 → `image_token_row.safetensors` (7 KB) 만 별도 저장하고, 추론 시 base 의 마지막 row 만 patch.
 → greedy decoding 7/7 응답 비트 단위 일치 (`scripts/verify_slim_adapter.py`).
-
-> 모델 압축이 아니라 **PEFT 의 `modules_to_save` default 가 tied embedding 과 결합되며 학습되지 않은 행까지 통째로 저장하는 동작을 우회한 결과**.
 
 ## 🔗 링크
 

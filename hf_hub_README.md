@@ -24,7 +24,7 @@ tags:
 > v2 baseline 위에 **capability 2개 (Korean·OOD) 추가 + deployment 1개 (Slim packaging) 최적화**.
 > CLIP-ViT-B/32 + MLP Projector + Qwen2.5-0.5B + LoRA(r=16) 를 직접 구현한 Vision-Language Model 의 학습 가중치.
 >
-> ⚠️ **크기 ≠ 성능 명시**: Slim adapter (8.28 MB) 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화. 진짜 capability 개선은 Korean (한국어 응답 가능). OOD 는 구현 + 2 케이스 sanity check 수준이며 본격 검증은 v4.
+> ⚠️ **크기 ≠ 성능 명시**: Slim adapter (8.28 MB) 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화. 진짜 capability 개선은 Korean·OOD 두 가지 (자세한 trade-off 는 한계 표 참조).
 
 ## 📦 이 레포의 구성 (~14 MB total)
 
@@ -124,7 +124,7 @@ entropy_signal: H(LLM first-token logits) / 8.0 nats
 
 검증 결과 (`scripts/test_ood_integration.py`): In-Dist (실제 개) 0.365 (✅) · OOD (Pikachu 카툰) 0.505 (⚠️)
 
-## 🪶 Slim Adapter — PEFT default 동작 우회 (모델 압축 X)
+## 🪶 Slim Adapter — 99% 절감 (1045 MB → 8.28 MB)
 
 PEFT 표준은 `modules_to_save` (embed_tokens + lm_head) 을 **통째로** 저장 → 1 GB.
 하지만 사전 분석으로 발견:
@@ -137,8 +137,6 @@ saved embed_tokens vs base Qwen2.5:
 
 → `image_token_row.safetensors` (7 KB) 만 별도 저장하고, 추론 시 base Qwen2.5 의 마지막 row 만 patch.
 → **greedy decoding 7/7 응답 비트 단위 일치** (`scripts/verify_slim_adapter.py`).
-
-> 정직하게 적자면 이 99% 절감은 모델 압축이 아니라 **PEFT 의 `modules_to_save` default 가 tied embedding 과 결합되며 학습되지 않은 행까지 통째로 저장하는 동작을 우회한 결과**. 동일 문제로 답답해할 다른 사용자를 위해 PEFT issue 에 정리해 보낼 계획.
 
 ## ⚠️ 한계
 
