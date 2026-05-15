@@ -1,6 +1,6 @@
 # Mini-LLaVA v3 — 한국어 응답 + 학습 분포 외 이미지 감지 + 추론 단계 성능 보강
 
-> [v2 vlm-from-scratch](https://github.com/AD-Styles/vlm-from-scratch) 에서 풀지 못했던 한국어 응답 / 환각 / 배포 무게 세 가지를 다음 단계로 정리. **한국어만 재학습, 환각·배포 무게는 추가 학습 없이 해결** — 학습으로 풀 문제와 분석으로 풀 문제를 구분한 사례.
+> [v2 vlm-from-scratch](https://github.com/AD-Styles/vlm-from-scratch) 에서 풀지 못했던 한국어 응답 / 환각 / 배포 무게 세 가지를 v3 에서 모두 해결. **한국어는 mix 데이터 재학습, 환각은 추론 wrapper + OOD layer 추가, 배포 무게는 Slim adapter (1045 MB → 8.28 MB)** — 학습 / 분석 / 추론을 문제별로 구분한 접근.
 
 ---
 
