@@ -406,6 +406,7 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 | 한계 | 영향 | v4 대응 |
 |---|---|---|
 | **0.5B LLM 의 시각적 추론** | 시각 detail 약함 (case 9 cartoon 등) | ⭐ **LLM 1.5B 키우기** — Step 2 의 ViT-L/14 한계 분석 + Step 1 의 한국어 free-form 가능성 → 1.5B 에서 case 9 / 1 / 7 / 8 동반 개선 기대 |
+| **⭐ 학습 데이터 규모** | Stage 1 정렬 5K · Stage 2 13K — LLaVA(558K/665K)의 1~2% 수준. projector 가 5K 캡션으로만 학습돼 비전-언어 정렬 자체가 약함 (v3 가 모델 크기만 병목으로 지목하며 놓친 절반) | Stage 1 정렬 데이터를 **대폭 확대** (projector-only 라 학습 비용 저렴 — 가장 큰 미사용 lever), Stage 2 도 현실 한도까지 확대. **+ 배포 전 평가 게이트** — raw 모델이 사전 설정 bar 통과 시에만 HF Spaces 배포 (v3 의 "배포 후 성능 미달 발견" 반복 차단) |
 | **POPE threshold 가 test set 으로 tuning** | 70% 는 일반화 보장 X. demo 는 untuned 53% | POPE train/test 분리 후 재측정 |
 | **OOD 검증 케이스 N=2** | 임계값 0.5 일반화 보장 부족 | **만화 + 추상화 + in-distribution** 케이스로 ROC AUC 재보정 (v3 의 Pikachu cartoon narrative 직결). ImageNet-O 는 HF 공식 미러 없어 의존 제거. 추론 평가라 노트북 부하 없음. |
 | **wrapper 11/12 중 8/12 가 router 기여** | "VLM 능력" 보다 "ensemble routing" | ⭐ LLM 1.5B 가 자동 해소 (위 우선순위 1 과 연동) |
