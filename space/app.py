@@ -131,6 +131,7 @@ with gr.Blocks(title="Mini-LLaVA v3-Enhanced Demo") as demo:
                 placeholder="예: Is there a dog in the image?",
                 lines=2,
             )
+            gr.Markdown('> ⚠️ 만화 / 추상화 같은 학습 분포 외 이미지는 0.5B LLM 한계로 정확도가 낮습니다 (자세한 한계는 <a href="https://github.com/AD-Styles/vlm-from-scratch-v3#%EF%B8%8F-한계-limitations" target="_blank" rel="noopener noreferrer">GitHub README</a> 참조).')
             gr.Examples(examples=EXAMPLES, inputs=[question_in], label="💡 예시 질문")
             submit_btn = gr.Button("🚀 응답 생성", variant="primary")
 
