@@ -269,7 +269,7 @@ python -m src.train \
 
 ---
 
-## 🧪 Step 2 — ViT-L/14 시도 (ViT-L/14 Ablation) — 효과 없어서 채택 X
+## 🧪 Step 2 — ViT-L/14 시도 (Ablation) — 효과 없어서 채택 X
 
 ### 동기
 
@@ -301,13 +301,11 @@ python -m src.train --vision-model openai/clip-vit-large-patch14-336 --bf16 \
 | Stage 2 | 172분 | 1.17 | projector 3.3 MB + LoRA 526 MB (bf16) |
 | **합계** | **199분** | | **8GB VRAM peak: 6.99 GB (87.4%)** |
 
-### 결과 (`scripts/test_step2_vitL14.py`, sampling temperature=0.7)
+### 결과 와 원인 (`scripts/test_step2_vitL14.py`, sampling temperature=0.7)
 
-→ 주체 식별 (강아지를 강아지로 알아보기) 은 개선 X. 색상 / 장면 detail 은 더 정확하게 잡았지만 핵심인 "이게 무엇인가" 는 여전히 못 맞췄습니다.
+주체 식별 (강아지를 강아지로 알아보기) 은 개선 X. 색상 / 장면 detail 은 더 정확하게 잡았지만 핵심인 "이게 무엇인가" 는 여전히 못 맞췄습니다.
 
-### 원인
-
-**진짜 병목은 0.5B LLM 의 시각적 추론 능력입니다.**
+진짜 병목은 0.5B LLM 의 시각적 추론 능력입니다:
 
 - LLaVA-1.5 가 같은 ViT-L/14 + Vicuna-**7B** 로 성공한 이유 → LLM 이 14배 큼
 - 0.5B LLM 으로는 576 patch 의 정보를 다 활용하지 못함
