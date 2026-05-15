@@ -401,11 +401,11 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 
 ## ⚠️ 한계와 v4 계획 (Limitations & Next Steps)
 
-지금 v3 의 한계 + 다음 버전에서 어떻게 풀지 한 표에 모았습니다. ⭐ 표시는 다음 2주 우선.
+지금 v3 의 한계 + 다음 버전에서 어떻게 풀지 한 표에 모았습니다. ⭐ 는 우선 항목.
 
 | 한계 | 영향 | v4 대응 |
 |---|---|---|
-| **0.5B LLM 의 시각적 추론** | 시각 detail 약함 (case 9 cartoon 등) | ⭐ **LLM 1.5B / 3B 키우기** (다음 2주 우선) — Step 2 의 ViT-L/14 한계 분석 + Step 1 의 한국어 free-form 가능성 → 1.5B 에서 case 9 / 1 / 7 / 8 동반 개선 기대 |
+| **0.5B LLM 의 시각적 추론** | 시각 detail 약함 (case 9 cartoon 등) | ⭐ **LLM 1.5B / 3B 키우기** — Step 2 의 ViT-L/14 한계 분석 + Step 1 의 한국어 free-form 가능성 → 1.5B 에서 case 9 / 1 / 7 / 8 동반 개선 기대 |
 | **POPE threshold 가 test set 으로 tuning** | 70% 는 일반화 보장 X. demo 는 untuned 53% | POPE train/test 분리 후 재측정 |
 | **OOD 검증 케이스 N=2** | 임계값 0.5 일반화 보장 부족 | ImageNet-O / 의료 / 추상화 50-100 케이스 ROC 분석 |
 | **wrapper 11/12 중 8/12 가 router 기여** | "VLM 능력" 보다 "ensemble routing" | ⭐ LLM 1.5B 가 자동 해소 (위 우선순위 1 과 연동) |
