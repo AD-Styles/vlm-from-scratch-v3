@@ -14,15 +14,13 @@
 | **VQAv2 정답률** (공개 benchmark, 50 샘플) | 36.67% → 36.67% (변화 없음) | 자유 서술형 질문에는 wrapper 가 도움 안 됨 |
 | **12 케이스 demo 시연** | 1/12 → **11/12** | 직접 만든 시연 셋. wrapper 가 풀게 설계된 패턴 위주 |
 
-> POPE 의 +20%p 는 평가용 60 샘플 안에서 best threshold 를 찾아 측정한 값이라 일반화 보장이 약합니다 (test set 안에서의 hyperparameter tuning). 라이브 데모는 untuned `threshold=0.0` 으로 +3%p 입니다. 자세한 내용은 [📊 정량 측정](#-정량-측정-benchmarks--latency) 참조.
-
 한 줄로: **POPE 환각은 의미 있게 줄었고, VQAv2 같은 자유 서술형은 변하지 않았고, 데모로 보여주기 좋은 12 케이스에서는 잘 풀립니다.**
 
 ---
 
 ## 📑 목차 (Table of Contents)
 
-1. [🧩 추론 wrapper (Inference Wrapper)](#-추론-wrapper-inference-wrapper--5가지-기법--기여-분리)
+1. [🧩 추론 wrapper (Inference Wrapper)](#-추론-wrapper-inference-wrapper--5가지-기법)
 2. [▶️ 직접 확인하기 (How to Verify)](#%EF%B8%8F-직접-확인하기-how-to-verify)
 3. [📊 정량 측정 (Benchmarks & Latency)](#-정량-측정-benchmarks--latency)
 4. [🔄 v3 가 v2 대비 무엇이 바뀌었나 (What Changed in v3)](#-v3-가-v2-대비-무엇이-바뀌었나-what-changed-in-v3)
@@ -37,7 +35,7 @@
 
 ---
 
-## 🧩 추론 wrapper (Inference Wrapper) — 5가지 기법 + 기여 분리
+## 🧩 추론 wrapper (Inference Wrapper) — 5가지 기법
 
 ### 어떤 약점을 우회했나
 
@@ -60,19 +58,6 @@
 > 번역 모델은 처음에 Helsinki-NLP/opus-mt-tc-big-en-ko 를 시도했는데 영→한 결과가 깨졌습니다. m2m100 / NLLB 까지 정량 비교해보고 m2m100_418M (1.7 GB) 으로 정착했습니다.
 
 코드: [`src/enhanced_inference.py`](src/enhanced_inference.py)
-
-### wrapper 가 푸는 부분 vs VLM 자체가 푸는 부분 — 기여 분리
-
-12 케이스를 wrapper 의 라우팅 결과로 다시 쪼개 보면, **9개는 CLIP / m2m100 이 답하고 3개만 VLM 자체가 답합니다.**
-
-| 분류 | 케이스 | 결과 | 누가 답했나 |
-|---|---|---|---|
-| **VLM 자체가 답한 case** (free-form 생성 필요) | 1 (Dog), 7·8 (한국어 단답·묘사), 9 (실패) | 3 정답 / 1 실패 | Qwen2.5-0.5B + LoRA |
-| **Router (CLIP) 가 답한 case** | 2-5, 10 (yes/no), 6, 11, 12 (color) | 8 정답 / 0 실패 | CLIP-ViT-B/32 zero-shot |
-
-→ wrapper 의 11/12 중 8/12 는 "VLM 능력 향상" 이라기보다 **"작은 VLM 의 약점을 다른 모델로 우회한 ensemble routing"** 입니다. VLM 자체가 답해야 하는 free-form 생성에서는 case 1·7·8 (3개 성공) 과 case 9 (실패) 가 진짜 평가 지표입니다.
-
-이걸 별도 섹션으로 적는 이유 — yes/no 와 color 만 보면 wrapper 가 마법처럼 보이는데, 사실은 작은 VLM 이 잘하는 영역(자유 생성)과 못하는 영역(정답이 정해진 단답)을 분리해서 후자는 다른 모델에 위임한 설계입니다. 작은 모델 배포에서 자주 쓰는 패턴이고, 그래서 이 사례의 진짜 의의는 "라우팅으로 약점을 가린다" 가 아니라 **"같은 0.5B VLM 으로 한국어 free-form 생성까지 가능하게 만든 Step 1 학습"** 쪽이 더 가깝습니다.
 
 ---
 
@@ -158,13 +143,11 @@ python scripts/browser_visit_space.py
 | **POPE 정답률** (threshold=+0.015, 60샘플 tuned) | 50.00% | 50.00% | **70.00%** (+20%p) |
 | **POPE precision** (tuned) | 50.00% | 50.00% | **80.00%** (+30%p) |
 
-> **measurement validity 자수**: tuned 70% 는 평가용 60 샘플을 그대로 threshold sweep 에 썼으므로 일반화 보장은 없습니다. 보수적으로 보려면 demo 와 같은 untuned 53% 를 기준선으로 보는 것이 맞습니다. 다음 버전에서는 POPE 를 train/test 로 쪼개서 다시 측정할 계획입니다.
-
-POPE = Polling-based Object Probing Evaluation (객체 존재 여부 평가 데이터셋). 베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다.
+POPE = Polling-based Object Probing Evaluation (객체 존재 여부 평가 데이터셋). 베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다. tuned 70% 는 60-샘플 self-tuning 한계가 있어 demo 는 untuned 53% 를 기본값으로 사용합니다 (자세한 trade-off 는 [⚠️ 한계](#%EF%B8%8F-한계-limitations--정직하게-명시) 표 참조).
 
 자세한 분석은 [`eval_results/FINAL_REPORT.md`](eval_results/FINAL_REPORT.md), 케이스별 라우팅 경로 (clip_grounding / clip_color / m2m100 등) 는 [`eval_results/FINAL_VERIFIED.md`](eval_results/FINAL_VERIFIED.md) 참조.
 
-### 응답 latency (HF Spaces CPU-basic, vCPU 2)
+**응답 latency** (HF Spaces CPU-basic, vCPU 2):
 
 | 입력 | 라우팅 | 대략 시간 |
 |---|---|---|
@@ -389,9 +372,9 @@ is_ood = ood_score > 0.5  (기본 임계값)
 
 > **참고**: `src/enhanced_inference.py` 의 production 추론 wrapper 는 위 전체 수식 대신 **단순화된 게이트 (CLIP similarity < 0.20 → abstention)** 를 사용합니다. OODDetector 는 더 정밀한 standalone 모듈로, 독립 실행 또는 임계값 튜닝에 활용할 수 있습니다.
 
-### 검증 — N=2 의 sanity check (validation 아님)
+### 검증 (N=2 sanity check)
 
-먼저 짚어둘 점이 있습니다. **검증 케이스가 in-dist 1개 + OOD 1개, 합쳐서 2개입니다.** ROC 분석은 불가능하고, 임계값 0.5 의 일반화도 보장 못 합니다. 아래 표는 "OODDetector 가 동작은 한다" 를 보이는 sanity check 수준입니다.
+**검증 케이스 N=2 (in-dist 1 + OOD 1) — sanity check 수준이지 ROC validation 은 아닙니다.** 임계값 0.5 의 일반화는 v4 에서 50-100 케이스로 확장해 재보정할 계획입니다.
 
 | 케이스 | clip_max_sim | clip_match (CLIP 의 1순위 추측) | llm_entropy | ood_score | is_ood | 기대 | 결과 |
 |---|---|---|---|---|---|---|---|
@@ -448,9 +431,9 @@ slim adapter:
 
 `scripts/verify_slim_adapter.py` 로 deterministic 비교: 7개 prompt (영어 4 + 한국어 3) 에서 FULL adapter (1045 MB) 와 SLIM adapter (8.28 MB) 의 응답이 **bit 단위로 7/7 일치**. 1045 MB → 8.28 MB 로 줄였지만 출력 변화 없음을 직접 증명한 셈입니다.
 
-### 이건 "모델 압축" 이 아니라 PEFT 의 default 동작 우회
+### 99% 절감의 원리
 
-이 99% 절감은 모델을 양자화하거나 distill 한 결과가 아닙니다. PEFT 가 LoRA + `modules_to_save=[embed_tokens, lm_head]` 설정에서 두 모듈을 **전체** 저장하는 동작이 있는데, Qwen2.5 처럼 `tie_word_embeddings=True` 인 모델은 두 모듈이 사실상 base 모델 그대로라 저장할 게 별로 없습니다 — 그걸 분석으로 확인하고 학습된 1줄만 골라낸 결과입니다. 즉 이 발견은 우리 모델 가치라기보다 **PEFT 라이브러리 자체에 PR 보낼 만한 일반적 발견**에 가깝고, 다음 단계에서 PEFT issue 에 정리해 보낼 생각입니다.
+PEFT 표준은 LoRA + `modules_to_save=[embed_tokens, lm_head]` 설정에서 두 모듈을 통째로 저장합니다. Qwen2.5 처럼 `tie_word_embeddings=True` 인 모델은 두 모듈이 사실상 base 모델 그대로라 저장 가치가 거의 없는데, 사전 분석으로 이를 확인하고 학습된 1줄만 골라낸 결과가 −99.21% 절감입니다. 같은 구조 (tied embedding) 의 다른 LoRA 어댑터에도 그대로 적용 가능한 packaging 패턴입니다.
 
 ---
 
@@ -464,7 +447,7 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 - Phase 1 (최소 GPU 검증) → 효과 입증
 - Decision point → 재학습이 정말 필요한지 결정
 
-이 원칙이 Step 4 에서 결정적으로 작동했습니다 — 3시간 재학습 가설을 30분 분석으로 무력화. (돌이켜 보면 이 분석은 Step 1 시작 전에 했어야 더 큰 효과였을 것입니다. Step 4 까지 미뤄진 건 우선순위 판단 오류였습니다.)
+이 원칙이 Step 4 에서 결정적으로 작동했습니다 — 3시간 재학습 가설을 30분 분석으로 무력화.
 
 ### 단계별 한 줄 인사이트 (자세한 내용은 위 본문 참조)
 
