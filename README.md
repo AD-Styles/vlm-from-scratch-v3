@@ -116,7 +116,7 @@ python scripts/browser_visit_space.py
 
 ¹ tuned 70% 는 평가용 60샘플 안에서 best threshold 를 찾은 결과 (test set self-tuning 한계). demo 는 untuned 53.33% 를 사용. POPE precision: untuned 52.17% → tuned 80.00%.
 
-베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다 (자세한 trade-off 는 [⚠️ 한계](#%EF%B8%8F-한계-limitations) 표 참조).
+베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다 (자세한 trade-off 는 [⚠️ 한계와 v4 계획](#%EF%B8%8F-한계와-v4-계획-limitations--next-steps) 표 참조).
 
 자세한 분석은 [`eval_results/FINAL_REPORT.md`](eval_results/FINAL_REPORT.md), 케이스별 라우팅 경로 (clip_grounding / clip_color / m2m100 등) 는 [`eval_results/FINAL_VERIFIED.md`](eval_results/FINAL_VERIFIED.md) 참조.
 
@@ -397,30 +397,21 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 | **3 (OOD)** | transformers 5.x 의 `get_text_features` 반환 타입 변경 발견 → `hasattr` 호환 layer 도입의 가치 |
 | **4 (Slim)** | "학습으로 풀 문제 vs 분석으로 풀 문제 구분" — 30분 분석으로 3시간 학습 절약 + 더 깊은 이해 |
 
-### v4 로드맵 — 다음 2주면 무엇을 먼저 할지
-
-**🎯 우선순위 1: LLM 을 1.5B 로 키워서 다시 측정.**
-Step 2 가 보여준 LLM 병목 + Step 1 의 한국어 free-form 가능성을 합치면, 1.5B 에서 case 9 (만화) + case 1·7·8 정확도 동반 상승 가능성이 높음. wrapper 의존도도 같이 내려감.
-
-| 항목 | 근거 | 예상 효과 |
-|---|---|---|
-| **1. LLM 크기 늘리기 (Qwen2.5-1.5B / 3B)** ⭐ 다음 2주 우선 | Step 2 의 ViT-L/14 한계 분석 | ViT-L/14 의 효과 검증 + 시각 인식 개선 + wrapper 의존도 감소 |
-| 2. POPE / OOD 정직 측정 | 현재 POPE 70% 는 60샘플 self-tuned, OOD 는 N=2 | 신뢰 가능한 수치 확보 (Korean VQA benchmark 도 부재 → KoVQA 같은 새 셋 검토) |
-| 3. Multi-turn 대화 지원 | 현재 single-turn | 실용성 개선 |
-| 4. vLLM / Triton 통합 | 현재 transformers `.generate()` | latency / throughput 개선 — [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 와 연계 |
-
 ---
 
-## ⚠️ 한계 (Limitations)
+## ⚠️ 한계와 v4 계획 (Limitations & Next Steps)
 
-| 한계 | 영향 | 대응 |
+지금 v3 의 한계 + 다음 버전에서 어떻게 풀지 한 표에 모았습니다. ⭐ 표시는 다음 2주 우선.
+
+| 한계 | 영향 | v4 대응 |
 |---|---|---|
-| **0.5B LLM 의 시각적 추론** | 시각 detail 인식 약함 (case 9 의 cartoon 실패 등) | v4: LLM 크기 늘리기 |
-| **POPE threshold 가 test set 으로 tuning 됨** | 70% 수치는 일반화 보장 X. demo 는 untuned 53% | v4: POPE train/test 분리 후 재측정 |
-| **OOD 검증 케이스 N=2** | 임계값 0.5 의 일반화 보장 부족 | v4: 50-100 케이스로 ROC 분석 |
-| **wrapper 의 11/12 중 8/12 가 router 기여** | "VLM 능력" 보다 "라우팅 ensemble" 에 가까움 | v4: LLM 1.5B 로 키우면 wrapper 의존도 자동 감소 |
-| **한국어 데이터 / 평가 부족** | 학습 4K · 공개 한국어 VQA benchmark 없음 → 답변 환각 잔존 + 정량 평가 못 함 | 한국어 instruction 데이터 추가 + KoVQA 등 새 셋 검토 |
-| **Single-turn 만 지원** | 실제 사용 시 불편 | v4: multi-turn |
+| **0.5B LLM 의 시각적 추론** | 시각 detail 약함 (case 9 cartoon 등) | ⭐ **LLM 1.5B / 3B 키우기** (다음 2주 우선) — Step 2 의 ViT-L/14 한계 분석 + Step 1 의 한국어 free-form 가능성 → 1.5B 에서 case 9 / 1 / 7 / 8 동반 개선 기대 |
+| **POPE threshold 가 test set 으로 tuning** | 70% 는 일반화 보장 X. demo 는 untuned 53% | POPE train/test 분리 후 재측정 |
+| **OOD 검증 케이스 N=2** | 임계값 0.5 일반화 보장 부족 | ImageNet-O / 의료 / 추상화 50-100 케이스 ROC 분석 |
+| **wrapper 11/12 중 8/12 가 router 기여** | "VLM 능력" 보다 "ensemble routing" | ⭐ LLM 1.5B 가 자동 해소 (위 우선순위 1 과 연동) |
+| **한국어 데이터 / 평가 부족** | 학습 4K · 공개 한국어 VQA benchmark 없음 → 환각 잔존 + 정량 평가 불가 | 한국어 instruction 데이터 추가 + KoVQA 등 새 셋 검토 |
+| **Single-turn 만 지원** | 실제 사용 시 불편 | Multi-turn 대화 지원 |
+| (배포 한계) **transformers `.generate()` 직접 호출** | latency / throughput 제한 | vLLM / Triton 통합 — [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 와 연계 |
 
 ---
 
