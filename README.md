@@ -4,18 +4,50 @@
 
 ---
 
-## 🎯 요약 — 추가 학습 없이 정답률 8% → 92%
+## 🎯 요약 — 무엇을 했고, 어디까지 정직하게 측정됐나
 
-| | 12 케이스 정답률 |
-|---|---|
-| v3 모델만 (이전 demo) | **1 / 12 (8.3%)** |
-| **v3 + 추론 wrapper (현 demo)** | **11 / 12 (91.7%)** |
+수치를 한 줄로 묶으면 오해를 사기 쉬워서, 측정 종류별로 따로 적습니다.
 
-모델 가중치는 그대로 두고, **추론할 때 5가지 보조 기법을 추가** 해서 다음 세 가지 문제를 우회했습니다.
+| 측정 | 값 | 의미 |
+|---|---|---|
+| **POPE 정답률** (공개 benchmark, 60 샘플) | 50.00% → **70.00%** (+20%p) | yes/no 환각 차단의 효과 |
+| **VQAv2 정답률** (공개 benchmark, 50 샘플) | 36.67% → 36.67% (변화 없음) | 자유 서술형 질문에는 wrapper 가 도움 안 됨 |
+| **12 케이스 demo 시연** | 1/12 → **11/12** | 직접 만든 시연 셋. wrapper 가 풀게 설계된 패턴 위주 |
 
-1. **yes/no 질문 편향** — 베이스 모델은 "Is there ...?" 류 질문에 거의 항상 "Yes" 라고 답함
+> ⚠️ **POPE 70% 에는 측정상 약점이 있어 미리 적습니다.** best threshold (+0.015) 를 찾을 때 평가에 쓴 60 샘플과 같은 셋을 사용했어요 (test set 안에서 hyperparameter tuning — 일반화 보장 X). 라이브 demo 는 그래서 untuned `threshold=0.0` 을 씁니다 — 이때 POPE 는 **53.33% (+3%p)** 입니다. 즉 wrapper 의 정직한 POPE 개선폭은 **+3 ~ +20%p 사이** 로 보는 게 맞습니다.
+
+한 줄로: **POPE 환각은 의미 있게 줄었고, VQAv2 같은 자유 서술형은 변하지 않았고, 데모로 보여주기 좋은 12 케이스에서는 잘 풀립니다.**
+
+### 추가 학습 없이 어떻게 끌어올렸나 — 5가지 추론 기법
+
+베이스 모델은 그대로 두고, 추론할 때 5가지 보조 기법을 추가해서 다음 세 가지 약점을 우회했습니다.
+
+1. **yes/no 질문 편향** — 베이스 모델이 "Is there ...?" 류에 거의 항상 "Yes" 라고 답함
 2. **색상 환각** — 흰 강아지를 "검정" 이라고 답하는 등
-3. **한국어 환각** — 한국어로 물어보면 엉뚱한 답을 그럴듯한 한국어 문장으로 만들어 냄
+3. **한국어 환각** — 한국어로 물어보면 그럴듯한 한국어 문장을 만드는데 내용이 엉뚱함
+
+| # | 기법 | 어떻게 동작하나 | 12 케이스 효과 |
+|---|---|---|---|
+| 1 | **CLIP 으로 yes/no 직접 판정** | "Is there X?" 패턴이 들어오면 CLIP 으로 "X 있는 사진" / "X 없는 사진" 임베딩과 이미지 유사도를 비교해 답 결정 | **5 / 5** (yes/no) |
+| 2 | **CLIP 으로 색상 분류** | "What color..." 패턴이면 12개 색상 단어와 이미지를 매칭해 가장 가까운 색 응답 | **3 / 3** (색상) |
+| 3 | **출력 후처리** | 모델 출력에서 단답만 추출, 따옴표/구두점 정리 | metric 호환 (정답률 영향 X) |
+| 4 | **한국어 ↔ 영어 번역** | facebook/m2m100_418M 으로 한국어 질문을 영어로 번역해 추론, 영어 답변을 다시 한국어로 번역 | **4 / 4** (한국어) |
+| 5 | **OOD 감지** | CLIP 이미지 유사도 < 0.20 이면 "잘 모르겠다" 로 응답 (독립형 OODDetector 는 CLIP + LLM 엔트로피 가중 합 — Step 3 참조) | 12 케이스는 모두 in-dist 라 미트리거 |
+
+> 번역 모델은 처음에 Helsinki-NLP/opus-mt-tc-big-en-ko 를 시도했는데 영→한 결과가 깨졌습니다. m2m100 / NLLB 까지 정량 비교해보고 m2m100_418M (1.7 GB) 으로 정착했습니다.
+
+### wrapper 가 푸는 부분 vs VLM 자체가 푸는 부분 — 기여 분리
+
+12 케이스를 wrapper 의 라우팅 결과로 다시 쪼개 보면, **9개는 CLIP / m2m100 이 답하고 3개만 VLM 자체가 답합니다.**
+
+| 분류 | 케이스 | 결과 | 누가 답했나 |
+|---|---|---|---|
+| **VLM 자체가 답한 case** (free-form 생성 필요) | 1 (Dog), 7·8 (한국어 단답·묘사), 9 (실패) | 3 정답 / 1 실패 | Qwen2.5-0.5B + LoRA |
+| **Router (CLIP) 가 답한 case** | 2-5, 10 (yes/no), 6, 11, 12 (color) | 8 정답 / 0 실패 | CLIP-ViT-B/32 zero-shot |
+
+→ 솔직히 말하면 wrapper 의 11/12 중 8/12 는 "VLM 능력 향상" 이라기보다 **"작은 VLM 의 약점을 다른 모델로 우회한 ensemble routing"** 입니다. **VLM 자체가 답해야 하는 free-form 생성에서는 case 1·7·8 (3개 성공) 과 case 9 (실패)** 가 진짜 평가 지표입니다.
+
+이걸 정직하게 적는 이유 — yes/no 와 color 만 보면 wrapper 가 마법처럼 보이는데, 사실은 작은 VLM 이 잘하는 영역(자유 생성)과 못하는 영역(정답이 정해진 단답)을 분리해서 후자는 다른 모델에 위임한 설계입니다. 작은 모델 배포에서 자주 쓰는 패턴이고, 그래서 이 사례의 진짜 의의는 "라우팅으로 약점을 가린다" 가 아니라 **"같은 0.5B VLM 으로 한국어 free-form 생성까지 가능하게 만든 Step 1 학습"** 쪽이 더 가깝습니다.
 
 ### 직접 확인하는 방법
 
@@ -31,18 +63,6 @@ python scripts/live_vs_enhanced.py
 ```
 
 웹에서 직접 써 보고 싶다면 → [Live Demo](https://huggingface.co/spaces/AD-Styles/mini-llava-v3-demo)
-
-### 추가한 5가지 추론 기법 (코드: [`src/enhanced_inference.py`](src/enhanced_inference.py))
-
-| # | 기법 | 어떻게 동작하나 | 12 케이스 효과 |
-|---|---|---|---|
-| 1 | **CLIP 으로 yes/no 직접 판정** | "Is there X?" 패턴이 들어오면 CLIP 으로 "X 있는 사진" / "X 없는 사진" 임베딩과 이미지 유사도를 비교해서 답 결정 | **5 / 5** (yes/no) |
-| 2 | **CLIP 으로 색상 분류** | "What color..." 패턴이면 12개 색상 단어와 이미지를 매칭해서 가장 가까운 색 응답 | **3 / 3** (색상) |
-| 3 | **출력 후처리** | 모델 출력에서 단답만 추출, 따옴표 / 구두점 정리 | metric 호환 (정답률 영향 X) |
-| 4 | **한국어 ↔ 영어 번역** | facebook/m2m100_418M 으로 한국어 질문을 영어로 번역해서 추론, 영어 답변을 다시 한국어로 번역 | **4 / 4** (한국어) |
-| 5 | **OOD 감지** | CLIP 이미지 유사도 < 0.20 이면 "잘 모르겠다" 로 응답 (독립형 OODDetector 는 CLIP + LLM 엔트로피 가중 합 사용 — Step 3 참조) | 12 케이스는 모두 in-dist 라 미트리거 |
-
-> 번역 모델은 처음에 Helsinki-NLP/opus-mt-tc-big-en-ko 를 시도했는데 영→한 결과가 깨졌습니다. m2m100 / NLLB 까지 정량 비교해보고 m2m100_418M (1.7 GB) 으로 정착했습니다.
 
 ### 테스트 이미지 (12 케이스 입력)
 
@@ -70,7 +90,7 @@ python scripts/live_vs_enhanced.py
 | 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ |
 | 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ |
 
-→ 유일한 실패 (case 9) 는 0.5B LLM 의 만화 인식 한계입니다. v4 에서 LLM 크기를 키워 다시 도전할 예정입니다.
+→ 유일한 실패 case 9 는 0.5B LLM 의 만화 인식 한계입니다. v4 에서 LLM 크기를 키워 다시 도전할 예정입니다.
 
 ### 라이브 UI 검증 (Playwright Chromium 7/7)
 
@@ -95,12 +115,26 @@ python scripts/live_vs_enhanced.py
 | | v2 | v3 (모델만) | v3 + 추론 wrapper |
 |---|---|---|---|
 | **VQAv2 정답률** | 34.67% | 36.67% | 36.67% |
-| **POPE 정답률** | 50.00% | 50.00% | **70.00%** (+20%p, threshold=+0.015) |
-| **POPE precision** | 50.00% | 50.00% | **80.00%** (+30%p) |
+| **POPE 정답률** (threshold=0.0, demo 동일) | 50.00% | 50.00% | 53.33% (+3%p) |
+| **POPE 정답률** (threshold=+0.015, 60샘플 tuned) | 50.00% | 50.00% | **70.00%** (+20%p) |
+| **POPE precision** (tuned) | 50.00% | 50.00% | **80.00%** (+30%p) |
 
-> POPE = Polling-based Object Probing Evaluation (객체 존재 여부 평가 데이터셋). 베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준입니다. wrapper 의 +20%p 는 실제로 이미지를 보고 답한 결과입니다.
+> **measurement validity 자수**: tuned 70% 는 평가용 60 샘플을 그대로 threshold sweep 에 썼으므로 일반화 보장은 없습니다. 정직하게 보려면 demo 와 같은 untuned 53% 를 기준선으로 보세요. 다음 버전에서는 POPE 를 train/test 로 쪼개서 다시 측정할 계획입니다.
+
+POPE = Polling-based Object Probing Evaluation (객체 존재 여부 평가 데이터셋). 베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다.
 
 자세한 분석은 [`eval_results/FINAL_REPORT.md`](eval_results/FINAL_REPORT.md), 케이스별 라우팅 경로 (clip_grounding / clip_color / m2m100 등) 는 [`eval_results/FINAL_VERIFIED.md`](eval_results/FINAL_VERIFIED.md) 참조.
+
+### 응답 latency (HF Spaces CPU-basic, vCPU 2)
+
+| 입력 | 라우팅 | 대략 시간 |
+|---|---|---|
+| 영어 yes/no ("Is there a cat?") | CLIP grounding (VLM 미사용) | **2-4초** |
+| 영어 색상 ("What color...") | CLIP color (VLM 미사용) | **2-4초** |
+| 영어 자유 ("What is in this image?") | VLM 직접 | **5-12초** |
+| 한국어 (전부) | m2m100 KO→EN + 위 분기 + m2m100 EN→KO | **8-18초** |
+
+(m2m100 1.7 GB 는 Space 부팅 시 미리 로드되므로 cold start 직후만 느림. cpu-basic 동시성 1.)
 
 ---
 
@@ -113,7 +147,7 @@ python scripts/live_vs_enhanced.py
 | | v2 | **v3** |
 |---|---|---|
 | **다국어 응답** | 영어만 (한국어 학습이 영어 능력을 덮어써서 한국어 출력 X) | **영어 + 한국어** |
-| **모름 답변** | 무조건 답함 (만화 / 추상화도 그럴듯하게 환각) | **CLIP 유사도 + LLM 엔트로피로 "모름" 판정** |
+| **모름 답변 (구현 + 2케이스 sanity)** | 무조건 답함 (만화 / 추상화도 그럴듯하게 환각) | **CLIP + LLM 엔트로피 OOD layer 추가** — 단, 검증 셋 N=2 라 본격 일반화는 v4 에서 |
 
 ### 그대로인 것 (정직하게 명시)
 
@@ -131,7 +165,7 @@ python scripts/live_vs_enhanced.py
 | **모델 자산 합계** | ≈ 1051 MB | **≈ 14 MB** |
 | **모델 출력** | (기준) | greedy decoding 결과가 **bit 단위로 동일** (7/7 일치) |
 
-> 크기를 줄였다고 모델이 더 똑똑해진 건 아닙니다. PEFT 가 1045 MB 로 저장하던 걸 8.28 MB 로 효율화한 것뿐입니다. 다운로드 시간 / hosting 비용이 줄어들 뿐, 정확도는 변화 없습니다.
+> 크기를 줄였다고 모델이 더 똑똑해진 건 아닙니다. PEFT 가 1045 MB 로 저장하던 걸 8.28 MB 로 효율화한 것뿐입니다. 다운로드 시간 / hosting 비용이 줄어들 뿐, 정확도는 변화 없습니다. (Slim 의 진짜 본질은 Step 4 끝부분에 따로 적었습니다.)
 
 | | v2 | v3 |
 |---|---|---|
@@ -166,6 +200,16 @@ python scripts/live_vs_enhanced.py
                  ▼ (★★ v3: 추론 wrapper 통과 여부 결정)
        "Dog. The dog is wearing a hat."
 ```
+
+### 왜 0.5B 를 선택했나
+
+작은 LLM 이 진짜 병목임을 알면서도 0.5B 를 유지한 데는 이유가 있습니다. 8GB VRAM 자체는 Qwen2.5-1.5B + LoRA + bf16 도 들어가지만, 다음 세 가지 trade-off 가 0.5B 쪽으로 기울게 했어요.
+
+1. **HF Spaces CPU-basic 추론 가능성** — 1.5B 는 cpu-basic (16GB RAM) 에서 fp32 로 돌리면 OOM 가까이 가고, bf16 으로 추론할 만한 환경이 cpu-basic 에 없음. 0.5B 는 fp32 로도 5-12초에 답변.
+2. **학습 시간 vs 실험 회전수** — Step 1 한국어 학습이 0.5B 로 175분, 1.5B 면 RTX 4060 8GB 에서 6-8시간 추정. 한 사이클 안에서 OOD/Slim 까지 같이 검증하기 위해 0.5B 유지.
+3. **demo cold start** — Spaces sleep 해제 후 모델 로드가 1.5B 면 60초+ 걸림. 0.5B 는 20초 안쪽.
+
+→ 즉 0.5B 는 "모델 능력의 최선" 이 아니라 **"무료 호스팅 환경에서 라이브 데모가 가능한 가장 큰 모델"** 입니다. v4 에서 vLLM/Triton 으로 옮기면 1.5B / 3B 를 다시 검토합니다.
 
 ### v3 에서 추가한 코드 (모두 `src/`)
 
@@ -282,7 +326,7 @@ python -m src.train --vision-model openai/clip-vit-large-patch14-336 --bf16 \
 
 ---
 
-## 🛡️ Step 3 — OOD 감지
+## 🛡️ Step 3 — OOD 감지 (구현 + 2케이스 sanity, 본격 검증은 v4)
 
 ### 동기
 
@@ -308,16 +352,18 @@ is_ood = ood_score > 0.5  (기본 임계값)
 
 > **참고**: `src/enhanced_inference.py` 의 production 추론 wrapper 는 위 전체 수식 대신 **단순화된 게이트 (CLIP similarity < 0.20 → abstention)** 를 사용합니다. OODDetector 는 더 정밀한 standalone 모듈로, 독립 실행 또는 임계값 튜닝에 활용할 수 있습니다.
 
-### 검증 (`scripts/test_ood_integration.py`)
+### 검증 — N=2 의 sanity check (validation 아님)
+
+먼저 솔직하게 적습니다. **검증 케이스가 in-dist 1개 + OOD 1개, 합쳐서 2개입니다.** ROC 분석은 불가능하고, 임계값 0.5 의 일반화도 보장 못 합니다. 아래 표는 "OODDetector 가 동작은 한다" 를 보이는 sanity check 수준입니다.
 
 | 케이스 | clip_max_sim | clip_match (CLIP 의 1순위 추측) | llm_entropy | ood_score | is_ood | 기대 | 결과 |
 |---|---|---|---|---|---|---|---|
 | 학습 분포 안 (실제 강아지) | 0.259 | 'a cat' (CLIP 도 잘못 추측) | 3.99 | **0.365** | False | False | ✅ |
 | 학습 분포 밖 (Pikachu, 만화) | 0.232 | 'a boat' (CLIP 도 잘못 추측) | 4.67 | **0.505** | True | True | ✅ |
 
-→ 2/2 정확 분류. CLIP 이 강아지를 'a cat' 으로 잘못 보더라도 LLM 엔트로피와 가중 합으로 안/밖을 구분할 수 있었습니다.
+→ 2/2 정확 분류. CLIP 이 강아지를 'a cat' 으로 잘못 보더라도 LLM 엔트로피와 가중 합으로 안/밖을 구분할 수 있었습니다 — 단, **두 케이스로 일반화 주장은 못 합니다**.
 
-> 검증 케이스가 2개뿐인 점은 한계입니다. v4 에서는 의료 / 추상화 / 손글씨 등 다양한 OOD 셋으로 임계값을 재보정할 계획입니다.
+→ v4 에서는 ImageNet-O / 의료 영상 / 추상화 / 손글씨 등 50-100 케이스로 확장해서 ROC AUC, threshold 재보정까지 같이 진행할 계획입니다.
 
 ---
 
@@ -373,6 +419,12 @@ slim adapter:
 
 → 1045 MB → 8.28 MB 로 줄였지만 출력 변화 없음을 직접 증명했습니다.
 
+### 이건 "모델 압축" 이 아니라 PEFT 의 default 동작 우회
+
+정직하게 적자면, 이 99% 절감은 **모델을 양자화하거나 distill 한 결과가 아닙니다.** PEFT 가 LoRA + `modules_to_save=[embed_tokens, lm_head]` 설정에서 두 모듈을 **전체** 저장하는 동작이 있는데, Qwen2.5 처럼 `tie_word_embeddings=True` 인 모델은 두 모듈이 사실상 base 모델 그대로라 저장할 게 별로 없습니다. 그걸 분석으로 확인하고 **학습된 1줄만 골라낸 것** 이 핵심.
+
+→ 즉 이 발견은 (a) 우리 모델 가치라기보다 (b) **PEFT 라이브러리 자체에 PR 보낼 만한 일반적 발견**에 가깝습니다. 한 줄 요약: "PEFT 의 modules_to_save 가 tied embedding 과 결합되면 학습 안 한 행까지 통째로 저장해 1GB 가 된다" — 같은 문제로 답답해하는 사람들이 있을 거고, 다음 단계에서 PEFT issue 에 정리해 보낼 생각입니다.
+
 ---
 
 ## 💭 회고 — v3 작업 과정에서 얻은 것
@@ -385,7 +437,7 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 - Phase 1 (최소 GPU 검증) → 효과 입증
 - Decision point → 재학습이 정말 필요한지 결정
 
-이 원칙이 Step 4 에서 결정적으로 작동했습니다 — 3시간 재학습 가설을 30분 분석으로 무력화.
+이 원칙이 Step 4 에서 결정적으로 작동했습니다 — 3시간 재학습 가설을 30분 분석으로 무력화. (다만 정직하게 보면 이 분석은 Step 1 시작 전에 했어야 더 큰 효과였을 거예요. Step 4 까지 미뤄진 건 제 우선순위 실수입니다.)
 
 ### 단계별 한 줄 인사이트 (자세한 내용은 위 본문 참조)
 
@@ -396,14 +448,19 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 | **3 (OOD)** | transformers 5.x 의 `get_text_features` 반환 타입 변경 발견 → `hasattr` 호환 layer 도입의 가치 |
 | **4 (Slim)** | "학습으로 풀 문제 vs 분석으로 풀 문제 구분" — 30분 분석으로 3시간 학습 절약 + 더 깊은 이해 |
 
-### v4 로드맵
+### v4 로드맵 — 다음 2주면 무엇을 먼저 할지
+
+우선순위 1번을 명시합니다.
+
+**🎯 우선순위 1: LLM 을 1.5B 로 키워서 다시 측정.**
+근거 — Step 2 에서 "vision encoder 가 아니라 LLM 이 병목" 임을 확인했고, Step 1 에서 한국어 free-form 생성이 0.5B 로도 가능했으니, 1.5B 면 case 9 (만화 인식 실패), case 1 / 7 / 8 의 정확도 모두 올라갈 가능성이 높습니다. wrapper 의존도가 줄면 라우팅 복잡도도 같이 내려갑니다.
 
 | 항목 | 근거 | 예상 효과 |
 |---|---|---|
-| 1. **LLM 크기 늘리기 (Qwen2.5-1.5B / 3B)** | Step 2 의 ViT-L/14 한계 분석 | ViT-L/14 의 효과 검증 + 시각 인식 개선 |
-| 2. **OOD 검증 셋 확장** | 현재 2 케이스만 | 임계값 일반화 + ROC 분석 |
-| 3. **Multi-turn 대화 지원** | 현재 single-turn | 실용성 개선 |
-| 4. **vLLM / Triton 통합** | 현재 transformers `.generate()` | latency / throughput 개선 — [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 와 연계 |
+| **1. LLM 크기 늘리기 (Qwen2.5-1.5B / 3B)** ⭐ 다음 2주 우선 | Step 2 의 ViT-L/14 한계 분석 | ViT-L/14 의 효과 검증 + 시각 인식 개선 + wrapper 의존도 감소 |
+| 2. POPE / OOD 정직 측정 | 현재 POPE 70% 는 60샘플 self-tuned, OOD 는 N=2 | 신뢰 가능한 수치 확보 (Korean VQA benchmark 도 부재 → KoVQA 같은 새 셋 검토) |
+| 3. Multi-turn 대화 지원 | 현재 single-turn | 실용성 개선 |
+| 4. vLLM / Triton 통합 | 현재 transformers `.generate()` | latency / throughput 개선 — [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 와 연계 |
 
 ---
 
@@ -411,12 +468,15 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 
 | 한계 | 영향 | 대응 |
 |---|---|---|
-| **0.5B LLM 의 시각적 추론** | 시각 detail 인식 약함 | v4: LLM 크기 늘리기 |
-| **OOD 검증 케이스 2개뿐** | 임계값 0.5 의 일반화 보장 부족 | v4: 다양한 OOD 셋으로 ROC 분석 |
+| **0.5B LLM 의 시각적 추론** | 시각 detail 인식 약함 (case 9 의 cartoon 실패 등) | v4: LLM 크기 늘리기 |
+| **POPE threshold 가 test set 으로 tuning 됨** | 70% 수치는 일반화 보장 X. demo 는 untuned 53% | v4: POPE train/test 분리 후 재측정 |
+| **OOD 검증 케이스 N=2** | 임계값 0.5 의 일반화 보장 부족 | v4: 50-100 케이스로 ROC 분석 |
+| **wrapper 의 11/12 중 8/12 가 router 기여** | "VLM 능력" 보다 "라우팅 ensemble" 에 가까움 | 한계라기보다 작은 LLM 의 합리적 설계 — v4 의 1.5B 로 wrapper 의존도 줄일 예정 |
 | **한국어 학습 데이터 4K** | 답변 환각 잔존 | 한국어 instruction 데이터 더 추가 |
+| **한국어 정량 benchmark 부재** | 한국어 정답률을 공개 셋으로 보여주지 못함 | KoVQA 등 새 셋 검토 |
 | **LoRA rank 16** | 표현력 제한 | rank 32+ 실험 (시간 trade-off) |
 | **Single-turn 만 지원** | 실제 사용 시 불편 | v4: multi-turn |
-| **8GB VRAM 제약** | batch size / 모델 크기 제한 | A100 / H100 등 큰 GPU 환경에서 재학습 시 정확도 향상 가능 |
+| **8GB VRAM 제약 + cpu-basic Spaces** | batch size / 모델 크기 / latency 제한 | v4 에서 vLLM/Triton 으로 옮기면 1.5B / 3B 가능 |
 
 ---
 
@@ -424,9 +484,13 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 
 - **LLaVA-1.5** — Liu et al. (2023), [Improved Baselines with Visual Instruction Tuning](https://arxiv.org/abs/2310.03744)
 - **Qwen2.5** — Yang et al. (2024), [Qwen2.5 Technical Report](https://arxiv.org/abs/2412.15115)
-- **KoLLaVA** — tabtoyou (2024), [KoLLaVA-Instruct-150k Dataset](https://huggingface.co/datasets/tabtoyou/KoLLaVA-Instruct-150k) (DeepL 번역, CC-BY-NC-4.0)
-- **PEFT** — Mangrulkar et al. (2022), [PEFT: State-of-the-art Parameter-Efficient Fine-Tuning](https://github.com/huggingface/peft)
 - **CLIP** — Radford et al. (2021), [Learning Transferable Visual Models From Natural Language Supervision](https://arxiv.org/abs/2103.00020)
+- **PEFT** — Mangrulkar et al. (2022), [PEFT: State-of-the-art Parameter-Efficient Fine-Tuning](https://github.com/huggingface/peft)
+- **POPE** — Li et al. (2023), [Evaluating Object Hallucination in Large Vision-Language Models](https://arxiv.org/abs/2305.10355)
+- **m2m100** — Fan et al. (2020), [Beyond English-Centric Multilingual Machine Translation](https://arxiv.org/abs/2010.11125)
+- **Helsinki-NLP / opus-mt** — Tiedemann (2020), [The Tatoeba Translation Challenge](https://arxiv.org/abs/2010.06354) (영→한 결과 깨짐 문제로 미채택)
+- **NLLB** — Costa-jussà et al. (2022), [No Language Left Behind](https://arxiv.org/abs/2207.04672) (정량 비교 후 m2m100 채택)
+- **KoLLaVA** — tabtoyou (2024), [KoLLaVA-Instruct-150k Dataset](https://huggingface.co/datasets/tabtoyou/KoLLaVA-Instruct-150k) (DeepL 번역, CC-BY-NC-4.0)
 
 ### 관련 portfolio repo
 
