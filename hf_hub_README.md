@@ -21,7 +21,7 @@ tags:
 
 # Mini-LLaVA v3 — Korean Multilingual + OOD Detection + Slim Deploy
 
-> v2 baseline 위에 **capability 2개 (Korean·OOD) 추가 + deployment 1개 (Slim packaging) 최적화**.
+> v2 에서 풀지 못했던 한국어 응답 / 환각 / 배포 무게 세 가지를 v3 에서 모두 해결. **한국어는 mix 데이터 재학습, 환각은 추론 wrapper + OOD layer 추가, 배포 무게는 Slim adapter (1045 MB → 8.28 MB)** — 학습 / 분석 / 추론을 문제별로 구분한 접근.
 > CLIP-ViT-B/32 + MLP Projector + Qwen2.5-0.5B + LoRA(r=16) 를 직접 구현한 Vision-Language Model 의 학습 가중치.
 >
 > ⚠️ **크기 ≠ 성능 명시**: Slim adapter (8.28 MB) 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화. 진짜 capability 개선은 Korean·OOD 두 가지 (자세한 trade-off 는 한계 표 참조).

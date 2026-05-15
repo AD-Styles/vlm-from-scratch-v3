@@ -14,6 +14,8 @@ short_description: VLM from scratch — v3 (KR + 8.28MB adapter + OOD detector)
 
 # Mini-LLaVA — v3 Demo
 
+> v2 에서 풀지 못했던 한국어 응답 / 환각 / 배포 무게 세 가지를 v3 에서 모두 해결. **한국어는 mix 데이터 재학습, 환각은 추론 wrapper + OOD layer 추가, 배포 무게는 Slim adapter (1045 MB → 8.28 MB)** — 학습 / 분석 / 추론을 문제별로 구분한 접근.
+
 CLIP-ViT-B/32 + MLP Projector + Qwen2.5-0.5B (+ slim LoRA r=16) + OOD layer 로 직접 구현한 Vision-Language Model 의 데모 배포.
 HuggingFace 의 `LlavaForConditionalGeneration` 같은 고수준 추상화 미사용 — `<image>` 토큰 splice 와 융합 로직 직접 구현.
 
