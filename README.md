@@ -407,9 +407,9 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 |---|---|---|
 | **0.5B LLM 의 시각적 추론** | 시각 detail 약함 (case 9 cartoon 등) | ⭐ **LLM 1.5B 키우기** — Step 2 의 ViT-L/14 한계 분석 + Step 1 의 한국어 free-form 가능성 → 1.5B 에서 case 9 / 1 / 7 / 8 동반 개선 기대 |
 | **POPE threshold 가 test set 으로 tuning** | 70% 는 일반화 보장 X. demo 는 untuned 53% | POPE train/test 분리 후 재측정 |
-| **OOD 검증 케이스 N=2** | 임계값 0.5 일반화 보장 부족 | ImageNet-O / 의료 / 추상화 50-100 케이스 ROC 분석 |
+| **OOD 검증 케이스 N=2** | 임계값 0.5 일반화 보장 부족 | **만화 + 추상화 + in-distribution** 케이스로 ROC AUC 재보정 (v3 의 Pikachu cartoon narrative 직결). ImageNet-O 는 HF 공식 미러 없어 의존 제거. 추론 평가라 노트북 부하 없음. |
 | **wrapper 11/12 중 8/12 가 router 기여** | "VLM 능력" 보다 "ensemble routing" | ⭐ LLM 1.5B 가 자동 해소 (위 우선순위 1 과 연동) |
-| **한국어 데이터 / 평가 부족** | 학습 4K · 공개 한국어 VQA benchmark 없음 → 환각 잔존 + 정량 평가 불가 | 현재 4K 만 사용한 KoLLaVA 풀 셋 (150K) 활용 + 한국어 평가셋 발굴 |
+| **한국어 데이터 / 평가 부족** | 학습 4K · 공개 한국어 VQA benchmark 없음 → 환각 잔존 + 정량 평가 불가 | KoLLaVA 에서 **노트북 한 장에서 끝나는 subset** 으로 확장 (풀셋 150K 는 학습 시간 + 이미지 다운 디스크 모두 비현실). 한국어 평가셋은 **m2m100 자동 번역 + sanity check 또는 manual 큐레이션** 중 시간 예산 맞는 방향 도입. |
 
 > production serving (vLLM / Triton 통합) 은 별도 portfolio [nlp-triton-deployment](https://github.com/AD-Styles/nlp-triton-deployment) 에서 다룹니다.
 
