@@ -45,7 +45,7 @@ FOOTER_MD = """
 · 🔁 [v2 baseline](https://github.com/AD-Styles/vlm-from-scratch)
 · 김도윤 (AD-Styles) · 2026
 
-> 💡 **CPU 환경**에서 동작 — 첫 한국어 질문 시 KO→EN MT 모델 다운로드 (~300 MB) 후 사용. 이후는 캐시 재사용.
+> 💡 **CPU 환경**에서 동작 — m2m100 번역 모델 (~1.7 GB) 은 Space 부팅 시 미리 로드되므로 한국어 질문도 첫 응답부터 정상 속도. Space cold start (sleep 해제) 시에만 초기 로딩 대기 발생.
 """
 
 EXAMPLES = [
