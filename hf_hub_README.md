@@ -24,7 +24,7 @@ tags:
 > v2 baseline 위에 **capability 2개 (Korean·OOD) 추가 + deployment 1개 (Slim packaging) 최적화**.
 > CLIP-ViT-B/32 + MLP Projector + Qwen2.5-0.5B + LoRA(r=16) 를 직접 구현한 Vision-Language Model 의 학습 가중치.
 >
-> ⚠️ **크기 ≠ 성능 명시**: Slim adapter (8.28 MB) 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화. 진짜 capability 개선은 Korean / OOD 두 가지.
+> ⚠️ **크기 ≠ 성능 명시**: Slim adapter (8.28 MB) 는 **같은 모델, 같은 출력** (greedy 7/7 비트 일치). 모델이 더 똑똑해진 것이 아니라 패키징만 효율화. 진짜 capability 개선은 Korean (한국어 응답 가능). OOD 는 구현 + 2 케이스 sanity check 수준이며 본격 검증은 v4.
 
 ## 📦 이 레포의 구성 (~14 MB total)
 
@@ -87,7 +87,7 @@ detector = OODDetector(threshold=0.5, device="cpu")
 | 항목 | v2 | **v3 (이 레포)** |
 |---|---|---|
 | 다국어 응답 | ❌ 영문 only (catastrophic forgetting) | ✅ **영문 + 한국어** |
-| OOD 신호 | ❌ 무조건 답변 (hallucination) | ✅ **"잘 모르겠음" 가능** (CLIP+entropy) |
+| OOD 신호 | ❌ 무조건 답변 (hallucination) | ✅ **"잘 모르겠음" layer 추가** (CLIP+entropy, 검증 N=2 — 본격 ROC 분석은 v4) |
 
 ### 🔵 deployment 최적화 (성능 변화 0, 배포 효율만)
 
@@ -100,7 +100,7 @@ detector = OODDetector(threshold=0.5, device="cpu")
 ### 🟡 변하지 않은 것 (정직한 명시)
 
 - 이미지 이해 정확도 — 0.5B LLM 한계로 v2/v3 동일 수준 (v4 LLM size up 으로 해결 예정)
-- 영문 VQA — v3 baseline 36.67% (v2 34.67% 대비 +2.00%p, VQAv2 50 samples greedy decoding 기준)
+- 영문 VQA — v3 baseline 36.67% vs v2 34.67% (+2.00%p, VQAv2 50 samples greedy decoding). 추론 wrapper 추가도 자유 서술형 질문 점수에는 영향 없음 — wrapper 의 의미 있는 개선은 POPE 환각 차단 쪽 (+3 ~ +20%p, 자세한 내용은 GitHub README)
 
 ## 🧠 학습 데이터 (Step 1, 175분)
 
@@ -124,7 +124,7 @@ entropy_signal: H(LLM first-token logits) / 8.0 nats
 
 검증 결과 (`scripts/test_ood_integration.py`): In-Dist (실제 개) 0.365 (✅) · OOD (Pikachu 카툰) 0.505 (⚠️)
 
-## 🪶 Slim Adapter — 핵심 기술
+## 🪶 Slim Adapter — PEFT default 동작 우회 (모델 압축 X)
 
 PEFT 표준은 `modules_to_save` (embed_tokens + lm_head) 을 **통째로** 저장 → 1 GB.
 하지만 사전 분석으로 발견:
@@ -137,6 +137,8 @@ saved embed_tokens vs base Qwen2.5:
 
 → `image_token_row.safetensors` (7 KB) 만 별도 저장하고, 추론 시 base Qwen2.5 의 마지막 row 만 patch.
 → **greedy decoding 7/7 응답 비트 단위 일치** (`scripts/verify_slim_adapter.py`).
+
+> 정직하게 적자면 이 99% 절감은 모델 압축이 아니라 **PEFT 의 `modules_to_save` default 가 tied embedding 과 결합되며 학습되지 않은 행까지 통째로 저장하는 동작을 우회한 결과**. 동일 문제로 답답해할 다른 사용자를 위해 PEFT issue 에 정리해 보낼 계획.
 
 ## ⚠️ 한계
 
