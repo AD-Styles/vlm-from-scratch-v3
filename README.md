@@ -261,10 +261,10 @@ python -m src.train \
 |---|---|
 | `Describe this image briefly.` | "In this image we can see a dog and the background is white." |
 | `What animal is in this image?` | "**Dog.**" |
-| `이 이미지에 무엇이 보이나요?` | (한국어로 정상 생성) |
-| `이 이미지의 색상은 무엇인가요?` | (한국어로 정상 생성) |
+| `이 이미지에 무엇이 보이나요?` | 한국어 응답 ✓ |
+| `이 이미지의 색상은 무엇인가요?` | 한국어 응답 ✓ |
 
-→ v2 에서는 한국어로 물어보면 영어 또는 영-한 혼합으로 답했지만, v3 는 한국어로 답합니다.
+→ v2 에서는 한국어로 물어보면 영어 또는 영-한 혼합으로 답했지만, v3 는 한국어로 답합니다 (Step 1 의 목표는 **출력 언어 복원** — 내용 정확도는 추론 wrapper 가 보완).
 → raw 모델이 이미지를 정확히 이해하는 능력은 0.5B LLM 한계로 부족합니다 — 위에 설명한 추론 wrapper (CLIP grounding + m2m100) 로 보완했습니다.
 
 ---
