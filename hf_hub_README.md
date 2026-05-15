@@ -97,7 +97,7 @@ detector = OODDetector(threshold=0.5, device="cpu")
 | 모델 자산 총합 | ~1051 MB | ~14 MB |
 | 모델 출력 | (baseline) | **bit-identical** to FULL (greedy 7/7 검증) |
 
-### 🟡 변하지 않은 것 (정직한 명시)
+### 🟡 변하지 않은 것
 
 - 이미지 이해 정확도 — 0.5B LLM 한계로 v2/v3 동일 수준 (v4 LLM size up 으로 해결 예정)
 - 영문 VQA — v3 baseline 36.67% vs v2 34.67% (+2.00%p, VQAv2 50 samples greedy decoding). 추론 wrapper 추가도 자유 서술형 질문 점수에는 영향 없음 — wrapper 의 의미 있는 개선은 POPE 환각 차단 쪽 (+3 ~ +20%p, 자세한 내용은 GitHub README)
