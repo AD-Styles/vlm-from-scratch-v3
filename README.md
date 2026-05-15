@@ -48,7 +48,7 @@
 
 ### 두 가지 검증 방법
 
-면접관이 같은 결과를 두 경로로 검증할 수 있도록 두 종류의 자동화를 둡니다.
+같은 결과를 두 경로로 외부 검증할 수 있도록 두 종류의 자동화를 둡니다.
 
 - **(A) gradio_client API 호출 → 12 케이스 결과 표** — 배포된 Space 가 로컬 wrapper 와 같은 답을 내는지 (deploy fidelity) 동시 비교.
 - **(B) Playwright Chromium 브라우저 → 7 케이스 UI 응답** — 실제 사용자가 브라우저로 접속했을 때의 응답 (스크린샷 8장 저장).
@@ -66,6 +66,8 @@ python scripts/browser_visit_space.py
 
 ### (A) 12 케이스 결과 — gradio_client API ([`eval_results/live_vs_enhanced.md`](eval_results/live_vs_enhanced.md))
 
+라이브 Space 에 같은 12개 prompt 를 던져서 **wrapper 적용 전 (raw baseline)** 과 **적용 후** 를 head-to-head 로 비교한 결과입니다.
+
 | # | 이미지 | 질문 | 기대 | v3 raw baseline | **v3 + 추론 wrapper** |
 |---|---|---|---|---|---|
 | 1 | dog | What is in this image? | dog | Cat ❌ | **Dog** ✅ |
@@ -76,7 +78,7 @@ python scripts/browser_visit_space.py
 | 6 | dog | What color of main subject? | white | Black ❌ | **white** ✅ |
 | 7 | dog | 이 이미지에 무엇이 보이나요? | 개 | 소 ❌ | **개** ✅ |
 | 8 | dog | 이 동물의 종류는? | 개 | 야생동물 ❌ | **개** ✅ |
-| 9 | pikachu | What is in this image? | cartoon | Dog ❌ | A picture of a (truncated) ❌ |
+| 9 | pikachu | What is in this image? | cartoon | Dog ❌ | "A picture of a..." (토큰 한도 도달, 미완성) ❌ |
 | 10 | pikachu | Is there a real animal? | no | Yes ❌ | **no** ✅ |
 | 11 | pikachu | What color is this character? | yellow | Black ❌ | **yellow** ✅ |
 | 12 | pikachu | 이 캐릭터의 색은? | 노란색 | 파란색 ❌ | **노란색** ✅ |
