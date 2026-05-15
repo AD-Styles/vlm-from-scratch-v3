@@ -319,7 +319,7 @@ python -m src.train --vision-model openai/clip-vit-large-patch14-336 --bf16 \
 
 ---
 
-## 🛡️ Step 3 — OOD 감지 (OOD Detection) — 구현 + 2케이스 sanity, 본격 검증은 v4
+## 🛡️ Step 3 — OOD 감지 (OOD Detection)
 
 ### 동기
 
@@ -345,18 +345,16 @@ is_ood = ood_score > 0.5  (기본 임계값)
 
 > **참고**: `src/enhanced_inference.py` 의 production 추론 wrapper 는 위 전체 수식 대신 **단순화된 게이트 (CLIP similarity < 0.20 → abstention)** 를 사용합니다. OODDetector 는 더 정밀한 standalone 모듈로, 독립 실행 또는 임계값 튜닝에 활용할 수 있습니다.
 
-### 검증 (N=2 sanity check)
+### 검증 결과
 
-**검증 케이스 N=2 (in-dist 1 + OOD 1) — sanity check 수준이지 ROC validation 은 아닙니다.** 임계값 0.5 의 일반화는 v4 에서 50-100 케이스로 확장해 재보정할 계획입니다.
+검증 케이스 2개 (in-dist 1 + OOD 1) — sanity check 수준의 결과입니다. 임계값 일반화는 v4 에서 ImageNet-O / 의료 / 추상화 등 50-100 케이스로 확장해 ROC AUC 재보정 예정.
 
 | 케이스 | clip_max_sim | clip_match (CLIP 의 1순위 추측) | llm_entropy | ood_score | is_ood | 기대 | 결과 |
 |---|---|---|---|---|---|---|---|
 | 학습 분포 안 (실제 강아지) | 0.259 | 'a cat' (CLIP 도 잘못 추측) | 3.99 | **0.365** | False | False | ✅ |
 | 학습 분포 밖 (Pikachu, 만화) | 0.232 | 'a boat' (CLIP 도 잘못 추측) | 4.67 | **0.505** | True | True | ✅ |
 
-→ 2/2 정확 분류. CLIP 이 강아지를 'a cat' 으로 잘못 보더라도 LLM 엔트로피와 가중 합으로 안/밖을 구분할 수 있었습니다 — 단, **두 케이스로 일반화 주장은 못 합니다**.
-
-→ v4 에서는 ImageNet-O / 의료 영상 / 추상화 / 손글씨 등 50-100 케이스로 확장해서 ROC AUC, threshold 재보정까지 같이 진행할 계획입니다.
+→ 2/2 정확 분류 — CLIP 이 강아지를 'a cat' 으로 잘못 봐도 LLM 엔트로피가 보완해서 안/밖을 구분.
 
 ---
 
