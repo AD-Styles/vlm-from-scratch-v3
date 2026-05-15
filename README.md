@@ -31,7 +31,7 @@
 7. [🧪 Step 2 — ViT-L/14 시도 (ViT-L/14 Ablation)](#-step-2--vit-l14-시도-vit-l14-ablation--효과-없어서-채택-x)
 8. [🛡️ Step 3 — OOD 감지 (OOD Detection)](#%EF%B8%8F-step-3--ood-감지-ood-detection--구현--2케이스-sanity-본격-검증은-v4)
 9. [🪶 Step 4 — Slim Adapter (Adapter Slimming)](#-step-4--slim-adapter-adapter-slimming--1045-mb--828-mb-출력-변화-없음)
-10. [💭 회고 (Retrospective)](#-회고-retrospective--v3-작업-과정에서-얻은-것)
+10. [💡 회고록 (Retrospective)](#-회고록-retrospective--v3-작업-과정에서-얻은-것)
 11. [⚠️ 한계 (Limitations)](#%EF%B8%8F-한계-limitations--정직하게-명시)
 12. [📚 참고 자료 (References)](#-참고-자료-references)
 
@@ -454,7 +454,7 @@ slim adapter:
 
 ---
 
-## 💭 회고 (Retrospective) — v3 작업 과정에서 얻은 것
+## 💡 회고록 (Retrospective) — v3 작업 과정에서 얻은 것
 
 ### 학습 전 분석의 가치 (v3 의 work-flow 원칙)
 
