@@ -4,23 +4,6 @@
 
 ---
 
-## 📑 목차 (Table of Contents)
-
-1. [🧩 추론 wrapper (Inference Wrapper)](#-추론-wrapper-inference-wrapper--5가지-기법)
-2. [▶️ 직접 확인하기 (How to Verify)](#%EF%B8%8F-직접-확인하기-how-to-verify)
-3. [📊 정량 측정 (Benchmarks & Latency)](#-정량-측정-benchmarks--latency)
-4. [🔄 v3 가 v2 대비 무엇이 바뀌었나 (What Changed in v3)](#-v3-가-v2-대비-무엇이-바뀌었나-what-changed-in-v3)
-5. [🏗️ 모델 구조 (Architecture)](#%EF%B8%8F-모델-구조-architecture)
-6. [🇰🇷 Step 1 — 한국어 데이터 추가 (Korean Data Mixing)](#-step-1--한국어-데이터-추가-korean-data-mixing--catastrophic-forgetting-해소)
-7. [🧪 Step 2 — ViT-L/14 시도 (ViT-L/14 Ablation)](#-step-2--vit-l14-시도-vit-l14-ablation--효과-없어서-채택-x)
-8. [🛡️ Step 3 — OOD 감지 (OOD Detection)](#%EF%B8%8F-step-3--ood-감지-ood-detection--구현--2케이스-sanity-본격-검증은-v4)
-9. [🪶 Step 4 — Slim Adapter (Adapter Slimming)](#-step-4--slim-adapter-adapter-slimming--1045-mb--828-mb-출력-변화-없음)
-10. [💡 회고록 (Retrospective)](#-회고록-retrospective--v3-작업-과정에서-얻은-것)
-11. [⚠️ 한계 (Limitations)](#%EF%B8%8F-한계-limitations--정직하게-명시)
-12. [📚 참고 자료 (References)](#-참고-자료-references)
-
----
-
 ## 🧩 추론 wrapper (Inference Wrapper) — 5가지 기법
 
 ### 어떤 약점을 우회했나
