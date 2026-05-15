@@ -321,7 +321,7 @@ is_ood = ood_score > 0.5  (기본 임계값)
 
 | 케이스 | clip_max_sim | clip_match (CLIP 의 1순위 추측) | llm_entropy | ood_score | is_ood | 기대 | 결과 |
 |---|---|---|---|---|---|---|---|
-| 학습 분포 안 (실제 강아지) | 0.259 | 'a cat' (CLIP 도 잘못 추측) | 3.99 | **0.365** | False | False | ✅ |
+| 학습 분포 안 <br>(실제 강아지) | 0.259 | 'a cat' (CLIP 도 잘못 추측) | 3.99 | **0.365** | False | False | ✅ |
 | 학습 분포 밖 (Pikachu, 만화) | 0.232 | 'a boat' (CLIP 도 잘못 추측) | 4.67 | **0.505** | True | True | ✅ |
 
 → 2/2 정확 분류 — CLIP 이 강아지를 'a cat' 으로 잘못 봐도 LLM 엔트로피가 보완해서 안/밖을 구분.
