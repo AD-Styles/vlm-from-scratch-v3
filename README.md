@@ -107,20 +107,20 @@ python scripts/browser_visit_space.py
 
 ### 표준 benchmark 점수
 
-`scripts/eval_proper.py` (v2 · v3 baseline) 와 `scripts/eval_enhanced.py` (v3 + 추론 wrapper) 로 측정한 공개 데이터셋 점수입니다 (VQAv2 50 + POPE 60, greedy decoding).
+`scripts/eval_proper.py` (v2 · v3 baseline) 와 `scripts/eval_enhanced.py` (v3 + 추론 wrapper) 로 측정한 공개 데이터셋 점수입니다 (VQAv2 50 + POPE 60, greedy decoding). POPE = Polling-based Object Probing Evaluation (객체 존재 여부 평가 데이터셋).
 
-| | v2 | v3 (모델만) | v3 + 추론 wrapper |
+| | v2 | v3 raw baseline | v3 + 추론 wrapper |
 |---|---|---|---|
 | **VQAv2 정답률** | 34.67% | 36.67% | 36.67% |
-| **POPE 정답률** (threshold=0.0, demo 동일) | 50.00% | 50.00% | 53.33% (+3%p) |
-| **POPE 정답률** (threshold=+0.015, 60샘플 tuned) | 50.00% | 50.00% | **70.00%** (+20%p) |
-| **POPE precision** (tuned) | 50.00% | 50.00% | **80.00%** (+30%p) |
+| **POPE 정답률** | 50.00% | 50.00% | **53.33% / 70.00%** (untuned / tuned ¹) |
 
-POPE = Polling-based Object Probing Evaluation (객체 존재 여부 평가 데이터셋). 베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다. tuned 70% 는 60-샘플 self-tuning 한계가 있어 demo 는 untuned 53% 를 기본값으로 사용합니다 (자세한 trade-off 는 [⚠️ 한계](#%EF%B8%8F-한계-limitations--정직하게-명시) 표 참조).
+¹ tuned 70% 는 평가용 60샘플 안에서 best threshold 를 찾은 결과 (test set self-tuning 한계). demo 는 untuned 53.33% 를 사용. POPE precision: untuned 52.17% → tuned 80.00%.
+
+베이스 모델의 50% 는 모든 질문에 "Yes" 답한 결과로 사실상 랜덤 수준이고, wrapper 의 +3 ~ +20%p 는 실제로 이미지를 보고 답한 결과입니다 (자세한 trade-off 는 [⚠️ 한계](#%EF%B8%8F-한계-limitations--정직하게-명시) 표 참조).
 
 자세한 분석은 [`eval_results/FINAL_REPORT.md`](eval_results/FINAL_REPORT.md), 케이스별 라우팅 경로 (clip_grounding / clip_color / m2m100 등) 는 [`eval_results/FINAL_VERIFIED.md`](eval_results/FINAL_VERIFIED.md) 참조.
 
-**응답 latency** (HF Spaces CPU-basic, vCPU 2):
+### 응답 latency (HF Spaces CPU-basic, vCPU 2)
 
 | 입력 | 라우팅 | 대략 시간 |
 |---|---|---|
