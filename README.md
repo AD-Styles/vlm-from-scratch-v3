@@ -226,7 +226,7 @@ v3 가 0.5B 를 유지한 데는 LLM 사이즈 외 환경 제약이 작용했습
 
 ---
 
-## 🇰🇷 Step 1 — 한국어 데이터 추가 (Korean Data Mixing) — catastrophic forgetting 해소
+## 🗣️ Step 1 — 한국어 데이터 추가 (Korean Data Mixing) — catastrophic forgetting 해소
 
 ### 데이터 구성
 
@@ -241,19 +241,9 @@ v3 가 0.5B 를 유지한 데는 LLM 사이즈 외 환경 제약이 작용했습
 `scripts/download_korean_data.py` — KoLLaVA 다운로드 + COCO 2014 이미지 cross-fetch
 `scripts/mix_manifests.py` — 영어 / 한국어 manifest 합치기
 
-### 학습 명령
+### 학습 비용
 
-```bash
-python -m src.train \
-  --data-path data/v3_step1_korean/manifest.json \
-  --output-dir checkpoints/v3_step1_korean \
-  --init-projector checkpoints/v1_baseline/projector.pt \
-  --use-lora --lora-r 16 --lora-alpha 32 \
-  --batch-size 2 --grad-accum-steps 4 --epochs 2 --lr 2e-4
-```
-
-- 학습 시간: **175분** (3,249 step)
-- Final loss: 1.16
+13K mix 데이터로 LoRA + projector 동시 학습 (Stage 2, r=16, lr 2e-4, batch 2 × grad-accum 4 × 2 epochs, v1 projector 이어받기). **175분 (3,249 step), final loss 1.16.**
 
 ### 결과 (greedy decoding)
 
