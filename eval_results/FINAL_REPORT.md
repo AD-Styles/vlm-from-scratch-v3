@@ -109,9 +109,8 @@ python scripts/eval_proper.py
 python scripts/eval_enhanced.py
 # → eval_results/v3_enhanced_results.json + comparison_enhanced.md
 
-# 3. POPE threshold sweep (저장된 margin 으로 재계산)
-python scripts/_sweep_pope_threshold.py
-# → 최적 threshold 출력
+# (POPE threshold +0.015 은 v3_enhanced_results.json 의 margin 분포에서
+#  one-time grid search 로 결정 — 위 표 수치에 이미 반영됨)
 ```
 
 평가 데이터셋:

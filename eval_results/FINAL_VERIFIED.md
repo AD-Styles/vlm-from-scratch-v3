@@ -73,7 +73,7 @@ print(answer[0])  # → "no"
 ### 4. KO↔EN translation pipeline (m2m100)
 - `facebook/m2m100_418M` (~1.7 GB, eager preload at app init — cold start 회피)
 - KO 질문 → EN 으로 번역 → v3 EN 라인으로 정확 추론 → EN 답변 → KO 로 역번역
-- 단일 multilingual 모델로 양방향 일관 처리 (`scripts/_test_mt_models.py` 정량 비교 후 채택)
+- 단일 multilingual 모델로 양방향 일관 처리 (m2m100 / NLLB / opus-mt 정량 비교 후 채택)
 - **케이스 7, 8 — 2/2 한국어 응답**
 - **라이브 UI 검증**: `scripts/browser_visit_space.py` 7/7 (영어 3 + 한국어 4 모두 같은 언어로 응답)
 
@@ -106,7 +106,6 @@ print(answer[0])  # → "no"
   ```bash
   python scripts/eval_proper.py        # baseline benchmark
   python scripts/eval_enhanced.py      # enhanced benchmark
-  python scripts/_sweep_pope_threshold.py  # threshold tuning
   python scripts/live_vs_enhanced.py   # 라이브 vs 로컬 비교
   ```
 

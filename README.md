@@ -42,7 +42,7 @@ python scripts/live_vs_enhanced.py
 | 4 | **한국어 ↔ 영어 번역** | facebook/m2m100_418M 으로 한국어 질문을 영어로 번역해서 추론, 영어 답변을 다시 한국어로 번역 | 한국어 4/4 라이브 검증 |
 | 5 | **OOD 감지** | CLIP 이미지 유사도 < 0.20 이면 "잘 모르겠다" 로 응답 (독립형 OODDetector 는 CLIP + LLM 엔트로피 가중 합 사용 — Step 3 참조) | 학습 분포 외 이미지에서 환각 차단 |
 
-> 번역 모델은 처음에 Helsinki-NLP/opus-mt-tc-big-en-ko 를 시도했는데 영→한 결과가 깨졌습니다. `scripts/_test_mt_models.py` 로 m2m100 / NLLB 까지 비교해보고 m2m100_418M (1.7 GB) 으로 정착했습니다.
+> 번역 모델은 처음에 Helsinki-NLP/opus-mt-tc-big-en-ko 를 시도했는데 영→한 결과가 깨졌습니다. m2m100 / NLLB 까지 정량 비교해보고 m2m100_418M (1.7 GB) 으로 정착했습니다.
 
 ### 테스트 이미지 (12 케이스 입력)
 
@@ -281,7 +281,7 @@ is_ood = ood_score > 0.5  (기본 임계값)
 
 v2 의 LoRA adapter 가 약 1 GB 였습니다. HF Hub 배포 시 무겁고 다운로드 친화적이지 않습니다.
 
-v2 에서 단순 추출을 시도했는데 응답 품질이 손상됐습니다 ([v2 README §Step 5](https://github.com/AD-Styles/vlm-from-scratch#-회고--개선의-여정) 참조).
+v2 에서 단순 추출을 시도했는데 응답 품질이 손상됐습니다 ([v2 README §Step 5](https://github.com/AD-Styles/vlm-from-scratch#step-5--배포-용이성-시도-실패에서-배운-것) 참조).
 
 ### 가설 검증 — 학습 전에 분석
 
@@ -394,7 +394,7 @@ v3 시작 전 원칙으로 정한 것: **"학습 시간 낭비 0"**
 ### Step 1 — 한국어 데이터 추가 (성공)
 
 - **시도:** KoLLaVA-Instruct-150k (DeepL 한국어 번역본) 4K + 영어 9K 를 섞어서 Stage 2 LoRA 재학습
-- **돌발 상황:** 이미지 다운로드가 마지막 2개에서 무한 대기. `scripts/_recover_manifest.py` 로 5,200 다운로드 완료 이미지에서 manifest 복구.
+- **돌발 상황:** 이미지 다운로드가 마지막 2개에서 무한 대기. 5,200 다운로드 완료 이미지에서 별도 복구 스크립트로 manifest 재구성.
 - **결과:** 한국어 응답 정상 생성 (catastrophic forgetting 해소)
 - **배운 것:** 외부 의존성 (urllib timeout 미설정) 의 무한 대기 가능성. 다음에는 timeout + 부분 결과 복구를 미리 설계해야 함.
 
