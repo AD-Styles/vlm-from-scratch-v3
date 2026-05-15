@@ -35,14 +35,14 @@ DEMO_BANNER_MD = """
 CLIP-ViT + Qwen2.5-0.5B + LoRA 로 직접 구현한 Vision-Language Model.
 영문 / 한국어 모두 지원, OOD 감지 포함.
 
-📖 [상세 분석 + benchmark](https://github.com/AD-Styles/vlm-from-scratch-v3)
+📖 <a href="https://github.com/AD-Styles/vlm-from-scratch-v3" target="_blank" rel="noopener noreferrer">상세 분석 + benchmark</a>
 """
 
 FOOTER_MD = """
 ---
-🔗 [GitHub](https://github.com/AD-Styles/vlm-from-scratch-v3)
-· 🤗 [Weights](https://huggingface.co/AD-Styles/mini-llava-v3)
-· 🔁 [v2 baseline](https://github.com/AD-Styles/vlm-from-scratch)
+🔗 <a href="https://github.com/AD-Styles/vlm-from-scratch-v3" target="_blank" rel="noopener noreferrer">GitHub</a>
+· 🤗 <a href="https://huggingface.co/AD-Styles/mini-llava-v3" target="_blank" rel="noopener noreferrer">Weights</a>
+· 🔁 <a href="https://github.com/AD-Styles/vlm-from-scratch" target="_blank" rel="noopener noreferrer">v2 baseline</a>
 · 김도윤 (AD-Styles) · 2026
 
 > 💡 **CPU 환경**에서 동작 — m2m100 번역 모델 (~1.7 GB) 은 Space 부팅 시 미리 로드되므로 한국어 질문도 첫 응답부터 정상 속도. Space cold start (sleep 해제) 시에만 초기 로딩 대기 발생.
